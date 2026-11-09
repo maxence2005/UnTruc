@@ -1,0 +1,49 @@
+<!-- PROTOTYPE - NOT FOR PRODUCTION
+     Question: Quelle technique d'animation rend des combats auto-battler 2D beaux et variés sans dessiner chaque animation : ragdoll physique, squelette modulaire animé par code, ou combo des deux ?
+     Date: 2026-11-09 -->
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UnTruc · Prototypes</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./index.html">Un<span>Truc</span></a>
+    <nav>
+      <a href="./piste-1.html">Piste 1 · Ragdoll</a>
+      <a href="./piste-2.html">Piste 2 · Modulaire</a>
+      <a href="./piste-4.html">Piste 4 · Combo</a>
+      <a href="./piste-5.html">Piste 5 · Simple + effets</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Prototypes de combat</h1>
+    <p class="intro">Plusieurs façons d'animer des combattants sans dessiner chaque animation à la main. Même stack pour les trois : Vite, TypeScript, Phaser 4 (et Matter.js, intégré à Phaser, pour la physique).</p>
+    <div class="cards">
+      <a class="card" href="./piste-1.html">
+        <span class="tag">Piste 1</span>
+        <h2>Ragdoll physique actif</h2>
+        <p>Des pantins physiques avec muscles. Les animations sortent de la simulation : chaque coup est unique, les chutes sont drôles.</p>
+      </a>
+      <a class="card" href="./piste-2.html">
+        <span class="tag">Piste 2</span>
+        <h2>Modulaire animé par code</h2>
+        <p>Persos générés à partir de pièces, squelette 2D, compétences décrites en poses clés. Contrôle total et lisibilité, comme La Brute.</p>
+      </a>
+      <a class="card" href="./piste-4.html">
+        <span class="tag">Piste 4</span>
+        <h2>Combo + effets</h2>
+        <p>Physique de la piste 1, look de la piste 2, et des effets visuels : étincelles, ralentis, boule de feu, ondes de choc.</p>
+      </a>
+      <a class="card" href="./piste-5.html">
+        <span class="tag">Piste 5</span>
+        <h2>Formes simples + effets</h2>
+        <p>Le look de la piste 1 avec les animations et effets de la piste 4 : yeux expressifs, accessoires et armes en formes simples.</p>
+      </a>
+    </div>
+  </main>
+</body>
+</html>

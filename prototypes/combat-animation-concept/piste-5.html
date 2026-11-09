@@ -1,0 +1,33 @@
+<!-- PROTOTYPE - NOT FOR PRODUCTION
+     Question: Quelle technique d'animation rend des combats auto-battler 2D beaux et variés sans dessiner chaque animation : ragdoll physique, squelette modulaire animé par code, ou combo des deux ?
+     Date: 2026-11-09 -->
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UnTruc · Piste 5 · Formes simples + effets</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./index.html">Un<span>Truc</span></a>
+    <nav>
+      <a href="./piste-1.html" >Piste 1 · Ragdoll</a>
+      <a href="./piste-2.html" >Piste 2 · Modulaire</a>
+      <a href="./piste-4.html">Piste 4 · Combo</a>
+      <a href="./piste-5.html" class="on">Piste 5 · Simple + effets</a>
+    </nav>
+    <div class="actions">
+      <button id="btn-speed">Vitesse ×1</button>
+      <button id="btn-new" class="primary">Nouveau combat</button>
+    </div>
+  </header>
+  <main>
+    <h1>Piste 5 · Formes simples + effets</h1>
+    <p class="intro">Le look épuré de la piste 1 avec toutes les animations et effets de la piste 4. Les persos restent des formes simples, mais avec des yeux qui réagissent (colère, sonné, K.O.), un accessoire par perso et des armes en formes simples.</p>
+    <div id="game"></div>
+  </main>
+  <script type="module" src="/src/piste-5.ts"></script>
+</body>
+</html>

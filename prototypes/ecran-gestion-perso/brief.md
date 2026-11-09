@@ -7,6 +7,8 @@
 
 After play: J'aime bien la variante 1. [...] Le fond noir, ça fait un peu IA [...] je pense qu'on peut le faire dans un menu de sélection de personnages au tout début. Mais est-ce qu'on peut le changer quand on veut? Ça, je suis pas trop sûr. Les icônes de compétences, très intéressant tout ça. [...] Ça fait un peu trop cartoon, tu vois, ces icônes. Après, j'aime bien celui de la boule de feu du loup-garou [...] mais genre, les coups de poing, l'attaque, je sais pas trop. Ok, les armes, ça c'est super [...] je prends la variante 1, mais il faudrait que tu me donnes différentes, genre design d'interface [...] des couleurs qui diffèrent, des manières de faire l'interface
 
+After play: J'aime bien le vestiaire. Après, est-ce qu'il faut mettre une image de vestiaire derrière ça? Ça, on verra ça après, bien sûr. Et les pictos, c'est super. C'est vraiment ce que je veux, tout simplement.
+
 **Pitch:** Trois façons d'équiper son combattant d'un coup d'œil : armes et compétences en petites icônes lisibles, combattant visible qui change en direct. *(guessed)*
 
 **Genre:** écran de gestion d'un auto-battler (maquette jouable)
@@ -51,6 +53,11 @@ Aucun échec : c'est une maquette. La contrainte est le nombre d'emplacements (1
 - La variante 1 (Fiche) : c'est la mise en page choisie *(you said)*
 - Les icônes d'armes : « on voit bien que c'est des armes » *(you said)*
 - Les icônes Boule de feu et Transformation (loup-garou) : « une bonne icône » *(you said)*
+
+- Le style Vestiaire *(you said)*
+- Les pictogrammes des compétences : « c'est vraiment ce que je veux » *(you said)*
+
+**Open question:** une vraie image de vestiaire en fond ? À voir plus tard *(you said)*.
 
 **Open question:** personnaliser le combattant à tout moment, ou seulement dans un écran de création au début ? Pas tranché *(you said)*.
 
