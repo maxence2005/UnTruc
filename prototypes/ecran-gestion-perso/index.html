@@ -24,9 +24,9 @@ const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value });
 const STEP = 1 / 60;
 const W = 1280, H = 720;
 const PIXEL = false;
-const FONT = '"Trebuchet MS", "Segoe UI", system-ui, sans-serif';
+let FONT = '"Trebuchet MS", "Segoe UI", system-ui, sans-serif'; // set by the style (applyTheme)
 const TITLE = 'Écran de gestion du perso';
-const CONTROLS = ['Souris ou toucher : survoler, choisir', '1 / 2 / 3 : changer de variante', 'Flèches + Entrée : choisir au clavier', 'M : son'];
+const CONTROLS = ['Souris ou toucher : survoler, choisir', '1 à 4 : changer de style', 'I : pictogrammes ou dessins', 'Flèches + Entrée : choisir au clavier', 'M : son'];
 const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 };
 const CHEAP = params.get('render') === 'cheap';
 let seed;
@@ -55,15 +55,71 @@ function fit() {
 addEventListener('resize', fit);
 
 // ---- The look: palette and drawing helpers ----------------------------------------------
-const OUT = '#1d1a26', BG = '#2a2438', BG2 = '#342c47', PANEL = '#f3ede2', PANEL2 = '#e4dccb';
-const INK = '#1d1a26', CREAM = '#f3ede2', GOLD = '#ffd23f', MUTED = '#6b6478';
+let OUT, BG, BG2, PANEL, PANEL2, INK, CREAM, GOLD, MUTED;
 const FAMILY = {
-  arme: { color: '#f2c14e', label: 'Arme' },
-  frappe: { color: '#ff7a45', label: 'Frappe' },
-  mouvement: { color: '#3fc6b4', label: 'Mouvement' },
-  magie: { color: '#9b7cf4', label: 'Magie' },
-  transformation: { color: '#7ccf63', label: 'Transformation' },
+  arme: { color: '', label: 'Arme' },
+  frappe: { color: '', label: 'Frappe' },
+  mouvement: { color: '', label: 'Mouvement' },
+  magie: { color: '', label: 'Magie' },
+  transformation: { color: '', label: 'Transformation' },
 };
+const DARK = '#1d1a26';
+// ---- Styles: one theme per visual direction, all on the same "Fiche" layout ---------------
+function plainPanel(x, y, w, h, color) { rr(x, y, w, h, 14); fillO(color || PANEL, 3); }
+const THEMES = {
+  riso: { name: 'Riso', font: '"Rockwell", "Roboto Slab", Georgia, serif',
+    out: '#1F2E63', bg2: '#1F2E63', panelColor: '#EAF4FA', panel2: '#D3E6F2', ink: '#1F2E63', iconInk: '#F4F8FB', gold: '#F6C945', muted: '#4D6191',
+    btnText: '#F4F8FB', bgText: '#1F2E63', bgTextSoft: '#2F4580', rowEquip: '#FBE7A6', equipText: '#B0301F', stage: 'rgba(31,46,99,0.18)',
+    fam: { arme: '#F6C945', frappe: '#E5402F', mouvement: '#1F7FA8', magie: '#7D4FC1', transformation: '#2E9E6A' },
+    bg() { ctx.fillStyle = '#9CC8E5'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = 'rgba(31,46,99,0.14)';
+      for (let y = 8; y < H; y += 16) for (let x = (y / 16) % 2 ? 8 : 16; x < W; x += 16) { ctx.beginPath(); ctx.arc(x, y, 0.8 + 2.4 * (y / H), 0, Math.PI * 2); ctx.fill(); } },
+    panel(x, y, w, h, color) { rr(x + 7, y + 7, w, h, 4); ctx.fillStyle = '#E5402F'; ctx.fill(); rr(x, y, w, h, 4); fillO(color || PANEL, 3); },
+    title(s, x, y) { text(s, x, y, 24, INK, 'left', 'bold'); } },
+  vestiaire: { name: 'Vestiaire', font: '"Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", sans-serif',
+    out: '#22302A', bg2: '#2C3F37', panelColor: '#6E8C7F', panel2: '#5F7D70', ink: '#F3F5EF', iconInk: '#F3F5EF', gold: '#E8D9A0', muted: '#D2E2D8',
+    btnText: '#F3F5EF', bgText: '#F3F5EF', bgTextSoft: '#CFE0D6', rowEquip: '#8AA06A', equipText: '#FFF1B8', stage: 'rgba(20,30,26,0.35)',
+    fam: { arme: '#E3B23C', frappe: '#D9573B', mouvement: '#2F8FB8', magie: '#8064C8', transformation: '#6FB04A' },
+    bg() { ctx.fillStyle = '#46645A'; ctx.fillRect(0, 0, W, H);
+      for (let x = 0; x < W; x += 160) { ctx.fillStyle = '#3A554C'; ctx.fillRect(x, 0, 5, H);
+        ctx.fillStyle = '#3A554C'; for (let i = 0; i < 6; i++) { rr(x + 40, 120 + i * 14, 80, 6, 3); ctx.fill(); } }
+      ctx.fillStyle = '#3A554C'; ctx.fillRect(0, H - 40, W, 40); },
+    panel(x, y, w, h, color) { rr(x, y, w, h, 6); fillO(color || PANEL, 4);
+      if (h > 120) {
+        for (const [px, py] of [[x + 10, y + 10], [x + w - 10, y + 10], [x + 10, y + h - 10], [x + w - 10, y + h - 10]]) { ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#2C3F37'; ctx.fill(); } } },
+    title(s, x, y) { ctx.save(); ctx.translate(x - 8, y); ctx.rotate(-0.03); ctx.font = `30px "Marker Felt", "Chalkboard SE", cursive`;
+      const tw = ctx.measureText(s).width + 28; ctx.fillStyle = '#E8D9A0'; ctx.fillRect(0, -18, tw, 36);
+      ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0, -18, 6, 36); ctx.fillRect(tw - 6, -18, 6, 36);
+      ctx.fillStyle = '#2B2B2B'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(s, 14, 2); ctx.restore(); } },
+  arene: { name: 'Arène', font: 'Georgia, "Times New Roman", serif',
+    out: '#3D2414', bg2: '#3D2414', panelColor: '#9C6338', panel2: '#B07444', ink: '#FFF3DD', iconInk: '#FFF7E6', gold: '#FFD34D', muted: '#F2D3A6',
+    btnText: '#FFF3DD', bgText: '#3D2414', bgTextSoft: '#5A3A22', rowEquip: '#C98A3E', equipText: '#FFE27A', stage: 'rgba(120,80,30,0.35)',
+    fam: { arme: '#D9A132', frappe: '#C8402A', mouvement: '#2A7F9E', magie: '#6B4BB5', transformation: '#4E9A3A' },
+    bg() { const g = ctx.createLinearGradient(0, 0, 0, 470); g.addColorStop(0, '#79BFEF'); g.addColorStop(1, '#CFE9F7');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, 470); ctx.fillStyle = '#E8B86A'; ctx.fillRect(0, 470, W, H - 470);
+      ctx.strokeStyle = '#D6A257'; ctx.lineWidth = 3; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0, 500 + i * 50); ctx.quadraticCurveTo(W / 2, 480 + i * 50 + (i % 2 ? 18 : -14), W, 505 + i * 50); ctx.stroke(); }
+      ctx.fillStyle = '#C8402A'; for (let x = 360; x < 920; x += 70) { ctx.beginPath(); ctx.moveTo(x, 64); ctx.lineTo(x + 70, 64); ctx.lineTo(x + 35, 96); ctx.closePath(); ctx.fill(); }
+      ctx.strokeStyle = '#3D2414'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(340, 64); ctx.lineTo(940, 64); ctx.stroke(); },
+    panel(x, y, w, h, color) { rr(x, y, w, h, 8); fillO(color || PANEL, 4);
+      ctx.save(); rr(x, y, w, h, 8); ctx.clip(); ctx.strokeStyle = 'rgba(61,36,20,0.4)'; ctx.lineWidth = 2;
+      for (let yy = y + 34; yy < y + h; yy += 34) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); } ctx.restore();
+      if (h > 120) for (const [px, py] of [[x + 12, y + 12], [x + w - 12, y + 12], [x + 12, y + h - 12], [x + w - 12, y + h - 12]]) { ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fillStyle = '#3D2414'; ctx.fill(); } },
+    title(s, x, y) { text(s, x, y, 26, INK, 'left', 'bold'); } },
+  original: { name: 'Original', font: '"Trebuchet MS", "Segoe UI", system-ui, sans-serif',
+    out: '#1d1a26', bg2: '#342c47', panelColor: '#f3ede2', panel2: '#e4dccb', ink: '#1d1a26', iconInk: '#f3ede2', gold: '#ffd23f', muted: '#6b6478',
+    btnText: '#f3ede2', bgText: '#f3ede2', bgTextSoft: '#d8cfe8', rowEquip: '#fff3c4', equipText: '#9a6a00', stage: '#342c47',
+    fam: { arme: '#f2c14e', frappe: '#ff7a45', mouvement: '#3fc6b4', magie: '#9b7cf4', transformation: '#7ccf63' },
+    bg() { ctx.fillStyle = '#2a2438'; ctx.fillRect(0, 0, W, H); },
+    panel: plainPanel, title(s, x, y) { text(s, x, y, 22, INK, 'left', 'bold'); } },
+};
+const STYLE_ORDER = ['riso', 'vestiaire', 'arene', 'original'];
+let THEME;
+function applyTheme(id) {
+  THEME = THEMES[id] || THEMES.riso; THEME.id = THEMES[id] ? id : 'riso';
+  OUT = THEME.out; BG2 = THEME.bg2; PANEL = THEME.panelColor; PANEL2 = THEME.panel2; INK = THEME.ink; CREAM = THEME.iconInk;
+  GOLD = THEME.gold; MUTED = THEME.muted; FONT = THEME.font;
+  for (const k in FAMILY) FAMILY[k].color = THEME.fam[k];
+}
+let ICONS = params.get('icons') === 'dessin' ? 'dessin' : 'picto';
 function text(s, x, y, size, c, align = 'center', weight = 'normal') {
   ctx.fillStyle = c; ctx.font = `${weight} ${size}px ${FONT}`; ctx.textAlign = align;
   ctx.textBaseline = 'middle'; ctx.fillText(s, x, y);
@@ -85,7 +141,7 @@ function limb(x1, y1, x2, y2, w, color) { // a thick outlined stroke: arms, legs
   ctx.lineWidth = w + 6; ctx.strokeStyle = OUT; ctx.stroke();
   ctx.lineWidth = w; ctx.strokeStyle = color; ctx.stroke();
 }
-function panel(x, y, w, h, color = PANEL) { rr(x, y, w, h, 14); fillO(color, 3); }
+function panel(x, y, w, h, color) { THEME.panel(x, y, w, h, color); }
 
 // ---- Content: weapons, skills, cosmetics -------------------------------------------------
 const WEAPONS = [
@@ -216,19 +272,77 @@ function picto(id, u) { // u: pixels per unit
   }
 }
 
+// ---- Sport pictograms: a geometric figure doing the move (the "picto" icon set) ------------
+// Joints in a -1..1 box, facing right; one flat colour, no outline, like a sports pictogram.
+const POSES = {
+  poing: { head: [-0.12, -0.6], neck: [-0.16, -0.38], hip: [-0.26, 0.16],
+    arms: [[[0.14, -0.4], [0.52, -0.4]], [[0.0, -0.18], [0.14, -0.32]]], legs: [[[0.02, 0.46], [0.18, 0.82]], [[-0.46, 0.46], [-0.66, 0.82]]],
+    fist: [0.56, -0.4], rays: [[0.72, -0.4], 0] },
+  combo: { head: [-0.12, -0.6], neck: [-0.16, -0.38], hip: [-0.26, 0.16],
+    arms: [[[0.14, -0.4], [0.52, -0.4]], [[0.0, -0.18], [0.14, -0.32]]], legs: [[[0.02, 0.46], [0.18, 0.82]], [[-0.46, 0.46], [-0.66, 0.82]]],
+    fist: [0.56, -0.4], ghosts: [[[0.12, -0.52], [0.46, -0.68]], [[0.12, -0.28], [0.46, -0.12]]] },
+  uppercut: { head: [-0.04, -0.58], neck: [-0.08, -0.36], hip: [-0.2, 0.2],
+    arms: [[[0.16, -0.28], [0.24, -0.78]], [[-0.3, -0.2], [-0.18, -0.06]]], legs: [[[0.08, 0.5], [0.0, 0.84]], [[-0.44, 0.5], [-0.52, 0.84]]],
+    fist: [0.25, -0.82], arc: true },
+  arme: { head: [-0.22, -0.56], neck: [-0.24, -0.34], hip: [-0.3, 0.2],
+    arms: [[[-0.02, -0.56], [0.14, -0.72]], [[-0.46, -0.2], [-0.5, 0.0]]], legs: [[[-0.06, 0.5], [0.08, 0.84]], [[-0.5, 0.5], [-0.66, 0.84]]],
+    sword: [0.14, -0.72, 0.75], slash: true },
+  pied: { head: [-0.5, -0.4], neck: [-0.34, -0.3], hip: [-0.02, -0.02],
+    arms: [[[-0.5, -0.06], [-0.66, 0.08]], [[-0.16, -0.54], [0.04, -0.62]]], legs: [[[0.38, -0.16], [0.78, -0.3]], [[-0.12, 0.34], [-0.4, 0.44]]],
+    foot: [0.82, -0.31] },
+  charge: { head: [0.36, -0.3], neck: [0.2, -0.24], hip: [-0.3, 0.1],
+    arms: [[[0.2, 0.04], [0.38, 0.0]], [[-0.02, 0.02], [-0.18, 0.2]]], legs: [[[-0.04, 0.46], [0.16, 0.82]], [[-0.58, 0.44], [-0.84, 0.72]]],
+    speed: true },
+  saut: { head: [0, -0.84], neck: [0, -0.64], hip: [0, -0.24],
+    arms: [[[-0.24, -0.82], [-0.3, -1.0]], [[0.24, -0.82], [0.3, -1.0]]], legs: [[[-0.24, 0.0], [-0.06, 0.16]], [[0.24, 0.0], [0.06, 0.16]]],
+    ground: true },
+  lancer: { head: [-0.42, -0.56], neck: [-0.46, -0.36], hip: [-0.56, 0.16],
+    arms: [[[-0.24, -0.48], [-0.02, -0.52]], [[-0.7, -0.24], [-0.86, -0.08]]], legs: [[[-0.32, 0.48], [-0.2, 0.84]], [[-0.78, 0.48], [-0.9, 0.84]]],
+    axe: [0.5, -0.36] },
+};
+function figurePicto(id, u, ink) {
+  const p = POSES[id], P = ([x, y]) => [x * u, y * u], seg = (a, b, w) => {
+    ctx.beginPath(); ctx.moveTo(...P(a)); ctx.lineTo(...P(b)); ctx.lineWidth = w * u; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = ink; ctx.stroke(); };
+  ctx.save();
+  if (p.ghosts) { ctx.globalAlpha = 0.45; for (const [e, h] of p.ghosts) { seg(p.neck, e, 0.14); seg(e, h, 0.14); } ctx.globalAlpha = 1; }
+  seg(p.neck, p.hip, 0.24);
+  for (const [e, h] of p.arms) { seg(p.neck, e, 0.15); seg(e, h, 0.15); }
+  for (const [k, f] of p.legs) { seg(p.hip, k, 0.17); seg(k, f, 0.17); }
+  ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(...P(p.head), 0.17 * u, 0, Math.PI * 2); ctx.fill();
+  if (p.fist) { ctx.beginPath(); ctx.arc(...P(p.fist), 0.11 * u, 0, Math.PI * 2); ctx.fill(); }
+  if (p.foot) { ctx.beginPath(); ctx.ellipse(p.foot[0] * u, p.foot[1] * u, 0.13 * u, 0.08 * u, -0.3, 0, Math.PI * 2); ctx.fill(); }
+  if (p.rays) { const [[rx, ry]] = p.rays; for (const a of [-0.6, 0, 0.6]) seg([rx + Math.cos(a) * 0.06, ry + Math.sin(a) * 0.06], [rx + Math.cos(a) * 0.24, ry + Math.sin(a) * 0.24], 0.06); }
+  if (p.arc) { ctx.beginPath(); ctx.arc(0.6 * u, -0.1 * u, 0.42 * u, Math.PI * 0.45, Math.PI * 1.25); ctx.lineWidth = 0.07 * u; ctx.strokeStyle = ink; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0.37 * u, -0.5 * u); ctx.lineTo(0.5 * u, -0.6 * u); ctx.lineTo(0.48 * u, -0.42 * u); ctx.closePath(); ctx.fill(); }
+  if (p.sword) { const [sx, sy, ang] = p.sword; ctx.save(); ctx.translate(sx * u, sy * u); ctx.rotate(ang);
+    ctx.fillRect(-0.05 * u, -0.08 * u, 0.1 * u, 0.12 * u); ctx.fillRect(-0.16 * u, -0.12 * u, 0.32 * u, 0.06 * u);
+    ctx.beginPath(); ctx.moveTo(-0.05 * u, -0.12 * u); ctx.lineTo(-0.05 * u, -0.66 * u); ctx.lineTo(0, -0.76 * u); ctx.lineTo(0.05 * u, -0.66 * u); ctx.lineTo(0.05 * u, -0.12 * u); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  if (p.slash) { ctx.beginPath(); ctx.arc(0.0, 0.1 * u, 0.82 * u, -Math.PI * 0.42, Math.PI * 0.12); ctx.lineWidth = 0.06 * u; ctx.setLineDash([0.1 * u, 0.07 * u]); ctx.strokeStyle = ink; ctx.stroke(); ctx.setLineDash([]); }
+  if (p.speed) for (const y of [-0.3, 0.02, 0.34]) seg([-1.0, y], [-0.72, y], 0.06);
+  if (p.ground) { seg([-0.8, 0.72], [0.8, 0.72], 0.08); for (const s of [-1, 1]) seg([s * 0.36, 0.56], [s * 0.6, 0.42], 0.06);
+    ctx.beginPath(); ctx.moveTo(-0.12 * u, 0.3 * u); ctx.lineTo(0.12 * u, 0.3 * u); ctx.lineTo(0, 0.52 * u); ctx.closePath(); ctx.fill(); }
+  if (p.axe) { ctx.save(); ctx.translate(p.axe[0] * u, p.axe[1] * u); ctx.rotate(1.1);
+    ctx.fillRect(-0.035 * u, -0.3 * u, 0.07 * u, 0.5 * u); ctx.beginPath(); ctx.moveTo(0.03 * u, -0.3 * u); ctx.quadraticCurveTo(0.26 * u, -0.34 * u, 0.26 * u, -0.1 * u); ctx.lineTo(0.03 * u, -0.14 * u); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.setLineDash([0.06 * u, 0.08 * u]); ctx.beginPath(); ctx.moveTo(0.02 * u, -0.56 * u); ctx.quadraticCurveTo(0.24 * u, -0.72 * u, 0.42 * u, -0.5 * u); ctx.lineWidth = 0.05 * u; ctx.strokeStyle = ink; ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
+}
+const usesPicto = id => ICONS === 'picto' && POSES[id];
+
 // ---- An icon: a family-coloured badge with its pictogram ----------------------------------
+function badgePath(r, square) { if (square) rr(-r, -r, 2 * r, 2 * r, r * 0.26); else { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); } }
 function drawIcon(id, x, y, r, opts = {}) {
-  const it = ITEMS[id], fam = FAMILY[it.fam];
+  const it = ITEMS[id], fam = FAMILY[it.fam], sq = usesPicto(id);
   ctx.save(); ctx.translate(x, y);
-  if (opts.equipped) { ctx.beginPath(); ctx.arc(0, 0, r + 7, 0, Math.PI * 2); ctx.fillStyle = GOLD; ctx.fill(); }
-  if (opts.focus) { ctx.beginPath(); ctx.arc(0, 0, r + 12, 0, Math.PI * 2); ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
-  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); fillO(opts.dim ? '#8e879c' : fam.color, Math.max(2.5, r / 12));
-  ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, Math.PI * 2); ctx.lineWidth = Math.max(1.5, r / 18); ctx.strokeStyle = 'rgba(29,26,38,0.25)'; ctx.stroke();
-  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r - 2, 0, Math.PI * 2); ctx.clip();
+  if (opts.equipped) { badgePath(r + 7, sq); ctx.fillStyle = GOLD; ctx.fill(); }
+  if (opts.focus) { badgePath(r + 12, sq); ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
+  badgePath(r, sq); fillO(opts.dim ? '#8e879c' : fam.color, Math.max(2.5, r / 12));
+  if (!sq) { ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, Math.PI * 2); ctx.lineWidth = Math.max(1.5, r / 18); ctx.strokeStyle = 'rgba(29,26,38,0.25)'; ctx.stroke(); }
+  ctx.save(); badgePath(r - 2, sq); ctx.clip();
   if (WEAPON_SPAN[id]) {
     const [a, b] = WEAPON_SPAN[id], len = b - a, s = (r * 1.55) / len;
     ctx.rotate(Math.PI / 4); ctx.scale(s, s); ctx.translate(0, -(a + b) / 2); weaponShape(id, '#f2c09a');
-  } else picto(id, r * 0.62);
+  } else if (sq) figurePicto(id, r * 0.8, THEME.iconInk);
+  else picto(id, r * 0.62);
   ctx.restore();
   if (opts.equipped) { // a small check badge, drawn
     ctx.translate(r * 0.72, -r * 0.72); ctx.beginPath(); ctx.arc(0, 0, Math.max(9, r * 0.28), 0, Math.PI * 2); fillO(GOLD, 2);
@@ -334,10 +448,10 @@ function reset() {
       outfit: Math.floor(rng() * COS.outfit.opts.length), skin: Math.floor(rng() * COS.skin.opts.length),
       hairColor: Math.floor(rng() * COS.hairColor.opts.length), shirt: Math.floor(rng() * COS.shirt.opts.length),
     },
-    focus: null, hover: null, hoverT: 0, pin: null, pinT: 0, msg: '', msgT: 0, tried: { A: false, B: false, C: false },
+    focus: null, hover: null, hoverT: 0, pin: null, pinT: 0, msg: '', msgT: 0, tried: { riso: false, vestiaire: false, arene: false, original: false }, style: params.get('style') || 'riso',
   };
   state.fighter.skills = [pick(SKILLS.slice(0, 4)).id];
-  state.tried[state.variant] = true;
+  applyTheme(state.style); state.style = THEME.id; state.tried[THEME.id] = true;
 }
 function say(m) { state.msg = m; state.msgT = tune.message_time; events.push({ msg: m }); }
 function setWeapon(id) { state.fighter.weapon = id; tone(330, 0.12); say(`${ITEMS[id].name} en main`); }
@@ -352,9 +466,12 @@ function setVariant(v) { state.variant = v; state.tried[v] = true; state.focus =
 
 // ---- Layout: each variant lists its interactive items; draw and input share it ------------
 function variantTabs(items) {
-  [['A', '1 · Fiche'], ['B', '2 · Onglets'], ['C', '3 · Silhouette']].forEach(([v, label], i) =>
-    items.push({ kind: 'variant', v, label, x: 370 + i * 184, y: 12, w: 176, h: 42, act: () => setVariant(v) }));
+  STYLE_ORDER.forEach((v, i) =>
+    items.push({ kind: 'variant', v, label: `${i + 1} ${THEMES[v].name}`, x: 330 + i * 150, y: 12, w: 142, h: 42, act: () => setStyle(v) }));
+  items.push({ kind: 'variant', v: 'icons', label: ICONS === 'picto' ? 'I  Icônes : pictos' : 'I  Icônes : dessin', x: 940, y: 12, w: 216, h: 42, act: toggleIcons });
 }
+function setStyle(v) { applyTheme(v); state.style = v; state.tried[v] = true; tone(520, 0.08); }
+function toggleIcons() { ICONS = ICONS === 'picto' ? 'dessin' : 'picto'; state.icons = ICONS; tone(600, 0.06); }
 function layoutA() {
   const items = []; variantTabs(items);
   const r = tune.icon_a;
@@ -422,12 +539,12 @@ const scenes = {
   figures: {
     update(dt) { state.t += dt; },
     draw() {
-      clear(BG); text('Toutes les icônes et le combattant avec chaque arme', W / 2, 30, 22, CREAM, 'center', 'bold');
+      THEME.bg(); text('Toutes les icônes et le combattant avec chaque arme', W / 2, 30, 22, THEME.bgText, 'center', 'bold');
       [...WEAPONS, ...SKILLS].forEach((it, i) => { const c = i % 5, row = Math.floor(i / 5), x = 160 + c * 240, y = 110 + row * 132;
-        drawIcon(it.id, x, y, 42); text(it.name, x, y + 58, 16, CREAM); });
+        drawIcon(it.id, x, y, 42); text(it.name, x, y + 58, 16, THEME.bgText, 'center', 'bold'); });
       WEAPONS.forEach((w, i) => { const f = { ...state.fighter, weapon: w.id, wolfPreview: false };
-        drawFighter(160 + i * 240, 600, 0.52, f); text(w.name, 160 + i * 240, 664, 15, CREAM); });
-      const f = { ...state.fighter, skills: ['transfo'], wolfPreview: true }; drawFighter(1230, 600, 0.4, f); text('Transfo', 1230, 664, 15, CREAM);
+        drawFighter(160 + i * 240, 600, 0.52, f); text(w.name, 160 + i * 240, 664, 15, THEME.bgText, 'center', 'bold'); });
+      const f = { ...state.fighter, skills: ['transfo'], wolfPreview: true }; drawFighter(1230, 600, 0.4, f); text('Transfo', 1230, 664, 15, THEME.bgText, 'center', 'bold');
     },
   },
   title: {
@@ -435,20 +552,19 @@ const scenes = {
       if (pressed('Enter') || pressed('Space') || clicks.length) { clicks.length = 0; reset(); scene = 'play'; }
     },
     draw() {
-      clear(BG); drawFighter(W / 2, 330, 1.0, state.fighter);
-      text(TITLE, W / 2, 70, 52, CREAM, 'center', 'bold');
-      text('Trois mises en page à comparer : choisis celle que tu préfères', W / 2, 118, 22, '#d8cfe8');
-      CONTROLS.forEach((c, i) => text(c, W / 2, 470 + i * 36, 22, '#d8cfe8'));
-      rr(W / 2 - 170, 630, 340, 56, 14); fillO(GOLD); text('Entrée ou clic pour commencer', W / 2, 658, 22, INK, 'center', 'bold');
+      THEME.bg(); drawFighter(W / 2, 330, 1.0, state.fighter);
+      text(TITLE, W / 2, 70, 52, THEME.bgText, 'center', 'bold');
+      text('Quatre styles de la fiche à comparer : choisis celui que tu préfères', W / 2, 118, 22, THEME.bgTextSoft);
+      CONTROLS.forEach((c, i) => text(c, W / 2, 452 + i * 34, 21, THEME.bgTextSoft));
+      rr(W / 2 - 170, 636, 340, 56, 14); fillO(GOLD); text('Entrée ou clic pour commencer', W / 2, 664, 22, DARK, 'center', 'bold');
     },
   },
   play: {
     update(dt) {
       state.t += dt;
       const items = layout();
-      if (pressed('Digit1') || pressed('Numpad1')) setVariant('A');
-      if (pressed('Digit2') || pressed('Numpad2')) setVariant('B');
-      if (pressed('Digit3') || pressed('Numpad3')) setVariant('C');
+      STYLE_ORDER.forEach((v, i) => { if (pressed(`Digit${i + 1}`) || pressed(`Numpad${i + 1}`)) setStyle(v); });
+      if (pressed('KeyI')) toggleIcons();
       if (pressed('ArrowRight')) moveFocus(items, 1, 0);
       if (pressed('ArrowLeft')) moveFocus(items, -1, 0);
       if (pressed('ArrowDown')) moveFocus(items, 0, 1);
@@ -464,47 +580,47 @@ const scenes = {
       state.fighter.wolfPreview = state.hover === 'transfo' || state.pin === 'transfo' && state.pinT > 0 || state.focus === 'icon:transfo::' || state.focus === 'card:transfo::';
     },
     draw() {
-      clear(BG);
+      THEME.bg();
       const items = layout();
       if (state.variant === 'A') drawA(items); else if (state.variant === 'B') drawB(items); else drawC(items);
       for (const it of items.filter(i => i.kind === 'variant')) {
-        const on = state.variant === it.v; rr(it.x, it.y, it.w, it.h, 12); fillO(on ? GOLD : BG2, 3);
-        text(it.label, it.x + it.w / 2, it.y + it.h / 2 + 1, 20, on ? INK : CREAM, 'center', 'bold');
+        const on = THEME.id === it.v; rr(it.x, it.y, it.w, it.h, 12); fillO(on ? GOLD : BG2, 3);
+        text(it.label, it.x + it.w / 2, it.y + it.h / 2 + 1, 19, on ? DARK : THEME.btnText, 'center', 'bold');
         if (state.focus === itemKey(it)) focusRing(it);
       }
-      text('Équipement partagé entre les variantes', 24, 34, 16, '#b9afcc', 'left');
-      text(`Vu : ${['A', 'B', 'C'].filter(v => state.tried[v]).join(' ')}`, W - 24, 34, 16, '#b9afcc', 'right');
+      text('Style', 24, 34, 20, THEME.bgText, 'left', 'bold');
       drawTooltip(items);
       if (state.msgT > 0) { ctx.font = `bold 18px ${FONT}`; const mw = ctx.measureText(state.msg).width + 40;
-        rr(W / 2 - mw / 2, H - 84, mw, 40, 12); fillO('#fff7d6', 2.5); text(state.msg, W / 2, H - 64, 18, INK, 'center', 'bold'); }
+        rr(W / 2 - mw / 2, H - 84, mw, 40, 12); fillO('#fff7d6', 2.5); text(state.msg, W / 2, H - 64, 18, DARK, 'center', 'bold'); }
     },
   },
 };
 function clear(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
-function focusRing(it) { rr(it.x - 5, it.y - 5, it.w + 10, it.h + 10, 14); ctx.setLineDash([7, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
+function focusRing(it) { rr(it.x - 5, it.y - 5, it.w + 10, it.h + 10, 14); ctx.setLineDash([7, 5]); ctx.lineWidth = 3; ctx.strokeStyle = OUT; ctx.stroke(); ctx.setLineDash([]); }
 function equipSummary(x, y) {
   const n = tune.skill_slots, f = state.fighter;
   text(`Compétences ${f.skills.length}/${n}`, x, y, 16, '#d8cfe8', 'left', 'bold');
 }
 
 function drawA(items) {
-  panel(24, 70, 292, 600 - 70 + 0, PANEL); text('Armes', 44, 92, 22, INK, 'left', 'bold'); text('1 en main', 296, 92, 15, MUTED, 'right');
-  panel(956, 70, 300, 528, PANEL); text('Compétences', 976, 92, 22, INK, 'left', 'bold');
+  panel(24, 70, 292, 600 - 70 + 0, PANEL); THEME.title('Armes', 44, 96); text('1 en main', 296, 92, 15, MUTED, 'right');
+  panel(956, 70, 300, 528, PANEL); THEME.title('Compétences', 976, 96);
   text(`${state.fighter.skills.length}/${tune.skill_slots}`, 1236, 92, 18, MUTED, 'right', 'bold');
-  ctx.beginPath(); ctx.ellipse(640, 540, 230, 40, 0, 0, Math.PI * 2); ctx.fillStyle = BG2; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(640, 540, 230, 40, 0, 0, Math.PI * 2); ctx.fillStyle = THEME.stage; ctx.fill();
   drawFighter(640, 450, 1.45, state.fighter);
   for (const it of items) {
     const focus = state.focus === itemKey(it);
     if (it.kind === 'icon') {
       const eq = equipped(it.id);
-      if (it.label === 'right') { rr(it.x, it.y, it.w, it.h, 12); ctx.fillStyle = eq ? '#fff3c4' : PANEL2; ctx.fill(); if (focus) focusRing(it);
+      if (it.label === 'right') { rr(it.x, it.y, it.w, it.h, 12); ctx.fillStyle = eq ? THEME.rowEquip : PANEL2; ctx.fill(); if (focus) focusRing(it);
         drawIcon(it.id, it.cx, it.cy, it.r, { equipped: eq }); text(ITEMS[it.id].name, it.x + 108, it.cy - 10, 19, INK, 'left', 'bold');
-        text(eq ? 'En main' : 'Choisir', it.x + 108, it.cy + 16, 15, eq ? '#9a6a00' : MUTED, 'left'); }
+        text(eq ? 'En main' : 'Choisir', it.x + 108, it.cy + 16, 15, eq ? THEME.equipText : MUTED, 'left'); }
       else { if (focus) focusRing(it); drawIcon(it.id, it.cx, it.cy, it.r, { equipped: eq });
-        const lines = wrap(ITEMS[it.id].name, it.w - 6, 14, 'bold'); lines.slice(0, 2).forEach((l, j) => text(l, it.cx, it.cy + it.r + 18 + j * 16, 14, INK, 'center', 'bold')); }
+        let fs = 15; ctx.font = `bold ${fs}px ${FONT}`; while (fs > 11 && ctx.measureText(ITEMS[it.id].name).width > it.w - 4) { fs -= 0.5; ctx.font = `bold ${fs}px ${FONT}`; }
+        text(ITEMS[it.id].name, it.cx, it.cy + it.r + 18, fs, INK, 'center', 'bold'); }
     } else if (it.kind === 'arrow') {
       rr(it.x, it.y, it.w, it.h, 10); fillO(BG2, 2.5); if (focus) focusRing(it);
-      const mx = it.x + it.w / 2, my = it.y + it.h / 2; ctx.beginPath(); ctx.moveTo(mx - 7 * it.dir, my - 11); ctx.lineTo(mx + 8 * it.dir, my); ctx.lineTo(mx - 7 * it.dir, my + 11); ctx.closePath(); ctx.fillStyle = CREAM; ctx.fill();
+      const mx = it.x + it.w / 2, my = it.y + it.h / 2; ctx.beginPath(); ctx.moveTo(mx - 7 * it.dir, my - 11); ctx.lineTo(mx + 8 * it.dir, my); ctx.lineTo(mx - 7 * it.dir, my + 11); ctx.closePath(); ctx.fillStyle = THEME.btnText; ctx.fill();
     } else if (it.kind === 'cos') {
       rr(it.x, it.y, it.w, it.h, 10); fillO(PANEL, 2.5); if (focus) focusRing(it);
       text(COS[it.k].label, it.x + it.w / 2, it.y + 16, 14, MUTED, 'center', 'bold');
@@ -583,8 +699,8 @@ function drawTooltip(items) {
   if (y + th > H - 8) y = H - th - 8; if (x < at.x + at.w && x + tw > at.x && y < at.y + at.h) y = at.y - th - 10; y = Math.max(60, y);
   rr(x, y, tw, th, 12); fillO('#fffaf0', 3);
   rr(x, y, tw, 8, [12, 12, 0, 0]); ctx.fillStyle = fam.color; ctx.fill();
-  text(item.name, x + 16, y + 32, 20, INK, 'left', 'bold');
-  text(`${fam.label}${equipped(id) ? ' · équipé' : ''}`, x + 16, y + 56, 15, MUTED, 'left', 'bold');
+  text(item.name, x + 16, y + 32, 20, DARK, 'left', 'bold');
+  text(`${fam.label}${equipped(id) ? ' · équipé' : ''}`, x + 16, y + 56, 15, '#6b6478', 'left', 'bold');
   lines.forEach((l, j) => text(l, x + 16, y + 82 + j * 20, 16, '#3a3446', 'left'));
 }
 

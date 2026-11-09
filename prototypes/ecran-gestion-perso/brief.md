@@ -5,11 +5,13 @@
 
 (Plus tôt dans la conversation :) Story 5, tout ce qui est UI, ça va être très important à faire. [...] menu de gestion du personnage, de tout, pour montrer les armes et les skills. Ça, il faudra peut-être un prototype de plusieurs prototypes pour que je choisisse moi-même. Parce que notamment, on doit pouvoir avoir des skills facilement représentables par des petites icônes, par exemple. Les armes facilement représentables et tout ça. C'est quelque chose de très important, notamment pour la brute, qui était très intéressant pour ça.
 
+After play: J'aime bien la variante 1. [...] Le fond noir, ça fait un peu IA [...] je pense qu'on peut le faire dans un menu de sélection de personnages au tout début. Mais est-ce qu'on peut le changer quand on veut? Ça, je suis pas trop sûr. Les icônes de compétences, très intéressant tout ça. [...] Ça fait un peu trop cartoon, tu vois, ces icônes. Après, j'aime bien celui de la boule de feu du loup-garou [...] mais genre, les coups de poing, l'attaque, je sais pas trop. Ok, les armes, ça c'est super [...] je prends la variante 1, mais il faudrait que tu me donnes différentes, genre design d'interface [...] des couleurs qui diffèrent, des manières de faire l'interface
+
 **Pitch:** Trois façons d'équiper son combattant d'un coup d'œil : armes et compétences en petites icônes lisibles, combattant visible qui change en direct. *(guessed)*
 
 **Genre:** écran de gestion d'un auto-battler (maquette jouable)
 
-**Controls:** souris ou toucher ; clavier en secours (1/2/3 change de variante, flèches + Entrée pour choisir). *(guessed)*
+**Controls:** souris ou toucher ; clavier en secours (1 à 4 change de style, I change de jeu d'icônes, flèches + Entrée pour choisir). *(guessed)*
 
 **Question:** Laquelle des trois mises en page rend armes et compétences les plus lisibles et le choix le plus agréable ?
 
@@ -42,11 +44,19 @@ Aucun échec : c'est une maquette. La contrainte est le nombre d'emplacements (1
 - [x] Info-bulle nom + effet au survol ou au toucher
 - [x] Cosmétiques : coiffure, barbe, tenue, couleurs ; le combattant change en direct
 - [x] Même équipement partagé entre les 3 variantes, bascule 1/2/3
+- [x] Quatre styles de la Fiche (Riso, Vestiaire, Arène, Original), bascule 1 à 4 ; la Fiche est la mise en page par défaut (B et C restent accessibles par ?variant=)
+- [x] Deux jeux d'icônes de compétences : pictogrammes sportifs (silhouette qui fait le geste) ou dessins, touche I ; Boule de feu et Transformation inchangées
 
 ## Keep
--
+- La variante 1 (Fiche) : c'est la mise en page choisie *(you said)*
+- Les icônes d'armes : « on voit bien que c'est des armes » *(you said)*
+- Les icônes Boule de feu et Transformation (loup-garou) : « une bonne icône » *(you said)*
+
+**Open question:** personnaliser le combattant à tout moment, ou seulement dans un écran de création au début ? Pas tranché *(you said)*.
 
 ## Avoid
+- Fond noir / sombre générique « qui fait IA » *(you said)*
+- Icônes trop cartoon (surtout les coups : poing, enchaînement, coup d'arme) *(you said)*
 - Stats du combattant (later).
 - Copier l'écran de La Brute.
 - Archétypes : le loup-garou est une compétence (Transformation), pas un type de combattant.
