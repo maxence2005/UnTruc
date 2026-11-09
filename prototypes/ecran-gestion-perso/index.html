@@ -1,0 +1,628 @@
+<!doctype html>
+<!-- PROTOTYPE - NOT FOR PRODUCTION -->
+<!-- Question: Laquelle des trois mises en page rend armes et compétences les plus lisibles et le choix le plus agréable ? -->
+<!-- Date: 2026-11-09 -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Écran de gestion du perso</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #221d30; overflow: hidden; }
+  body { font-variant-numeric: tabular-nums; }
+  canvas { display: block; margin: 0 auto; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script src="config.js"></script>
+<script>
+'use strict';
+// ---- Built to be checked ----------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const tune = new Proxy({}, { get: (_, k) => CONFIG[k].value });
+const STEP = 1 / 60;
+const W = 1280, H = 720;
+const PIXEL = false;
+const FONT = '"Trebuchet MS", "Segoe UI", system-ui, sans-serif';
+const TITLE = 'Écran de gestion du perso';
+const CONTROLS = ['Souris ou toucher : survoler, choisir', '1 / 2 / 3 : changer de variante', 'Flèches + Entrée : choisir au clavier', 'M : son'];
+const clock = window.GAME_CLOCK || { now: () => performance.now() / 1000 };
+const CHEAP = params.get('render') === 'cheap';
+let seed;
+function rng() {
+  seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), seed | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const pick = a => a[Math.floor(rng() * a.length)];
+const events = [];
+
+// ---- Screen ---------------------------------------------------------------------------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let view = { s: 1, left: 0, top: 0 };
+function fit() {
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  const r = k * (devicePixelRatio || 1);
+  canvas.width = Math.round(W * r); canvas.height = Math.round(H * r);
+  canvas.style.width = Math.round(W * k) + 'px'; canvas.style.height = Math.round(H * k) + 'px';
+  canvas.style.marginTop = Math.max(0, Math.floor((innerHeight - H * k) / 2)) + 'px';
+  ctx.setTransform(r, 0, 0, r, 0, 0); ctx.imageSmoothingEnabled = true;
+  if (scene) drawFrame();
+}
+addEventListener('resize', fit);
+
+// ---- The look: palette and drawing helpers ----------------------------------------------
+const OUT = '#1d1a26', BG = '#2a2438', BG2 = '#342c47', PANEL = '#f3ede2', PANEL2 = '#e4dccb';
+const INK = '#1d1a26', CREAM = '#f3ede2', GOLD = '#ffd23f', MUTED = '#6b6478';
+const FAMILY = {
+  arme: { color: '#f2c14e', label: 'Arme' },
+  frappe: { color: '#ff7a45', label: 'Frappe' },
+  mouvement: { color: '#3fc6b4', label: 'Mouvement' },
+  magie: { color: '#9b7cf4', label: 'Magie' },
+  transformation: { color: '#7ccf63', label: 'Transformation' },
+};
+function text(s, x, y, size, c, align = 'center', weight = 'normal') {
+  ctx.fillStyle = c; ctx.font = `${weight} ${size}px ${FONT}`; ctx.textAlign = align;
+  ctx.textBaseline = 'middle'; ctx.fillText(s, x, y);
+}
+function wrap(s, maxW, size, weight = 'normal') {
+  ctx.font = `${weight} ${size}px ${FONT}`;
+  const words = s.split(' '), lines = []; let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function fillO(color, lw = 3) { ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = OUT; ctx.stroke(); }
+function limb(x1, y1, x2, y2, w, color) { // a thick outlined stroke: arms, legs, handles
+  ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.lineWidth = w + 6; ctx.strokeStyle = OUT; ctx.stroke();
+  ctx.lineWidth = w; ctx.strokeStyle = color; ctx.stroke();
+}
+function panel(x, y, w, h, color = PANEL) { rr(x, y, w, h, 14); fillO(color, 3); }
+
+// ---- Content: weapons, skills, cosmetics -------------------------------------------------
+const WEAPONS = [
+  { id: 'mains', name: 'Mains nues', fam: 'arme', fx: 'Rapide mais courte portée : les poings frappent vite et souvent.', two: false },
+  { id: 'epee', name: 'Épée', fam: 'arme', fx: 'Équilibrée, à une main : bonne portée, coups précis.', two: false },
+  { id: 'marteau', name: 'Marteau', fam: 'arme', fx: 'Très lourd, à deux mains : entraîne tout le corps, énorme impact.', two: true },
+  { id: 'hache', name: 'Hache', fam: 'arme', fx: 'Lourde, à une main : coups larges qui balaient.', two: false },
+  { id: 'baton', name: 'Bâton', fam: 'arme', fx: 'Long, à deux mains : garde l’adversaire à distance.', two: true },
+];
+const SKILLS = [
+  { id: 'poing', name: 'Coup de poing', fam: 'frappe', fx: 'Un direct rapide, toujours disponible.' },
+  { id: 'combo', name: 'Enchaînement', fam: 'frappe', fx: 'Trois coups à la suite si le premier touche.' },
+  { id: 'uppercut', name: 'Uppercut', fam: 'frappe', fx: 'Frappe vers le haut qui soulève l’adversaire.' },
+  { id: 'arme', name: 'Coup d’arme', fam: 'frappe', fx: 'Attaque propre à l’arme tenue en main.' },
+  { id: 'pied', name: 'Coup de pied sauté', fam: 'mouvement', fx: 'Bond en avant, pied tendu.' },
+  { id: 'charge', name: 'Charge d’épaule', fam: 'mouvement', fx: 'Fonce et bouscule l’adversaire au sol.' },
+  { id: 'saut', name: 'Saut écrasant', fam: 'mouvement', fx: 'Saute et retombe sur la cible.' },
+  { id: 'lancer', name: 'Lancer d’arme', fam: 'mouvement', fx: 'Jette son arme à distance, puis se bat à mains nues.' },
+  { id: 'boule', name: 'Boule de feu', fam: 'magie', fx: 'Projectile enflammé lancé de loin.' },
+  { id: 'transfo', name: 'Transformation', fam: 'transformation', fx: 'Devient loup-garou en plein combat : griffes et queue.' },
+];
+const ITEMS = Object.fromEntries([...WEAPONS, ...SKILLS].map(i => [i.id, i]));
+const COS = {
+  hair: { label: 'Coiffure', opts: ['chauve', 'pics', 'bol', 'iroquoise', 'longs', 'chignon'],
+    names: ['Chauve', 'Pics', 'Bol', 'Iroquoise', 'Longs', 'Chignon'] },
+  beard: { label: 'Barbe', opts: [false, true], names: ['Sans barbe', 'Barbe'] },
+  outfit: { label: 'Tenue', opts: ['tshirt', 'debardeur', 'torse', 'armure'], names: ['T-shirt', 'Débardeur', 'Torse nu', 'Armure'] },
+  skin: { label: 'Peau', opts: ['#ffd9b8', '#f2c09a', '#e0a477', '#c17f53', '#9a5f3a', '#6e4128', '#b8e0a0', '#a9c8ff'] },
+  hairColor: { label: 'Cheveux', opts: ['#2b1d14', '#5a3a22', '#c9862f', '#f2d16b', '#e8e2d4', '#d8462f', '#3c6fd8', '#ff6fae'] },
+  shirt: { label: 'Haut', opts: ['#ff7a45', '#3fc6b4', '#f2c14e', '#8a6cf0', '#e9566c', '#4fa3f7', '#7ccf63', '#f3ede2'] },
+};
+const COS_KEYS = Object.keys(COS);
+const isColor = k => !COS[k].names;
+function cosName(k, i) { return COS[k].names ? COS[k].names[i] : `Teinte ${i + 1}`; }
+
+// ---- Weapon shapes: grip at the origin, pointing up (-y) -------------------------------
+function weaponShape(id, skin) {
+  if (id === 'epee') {
+    rr(-5, -2, 10, 28, 3); fillO('#8a5a33');
+    ctx.beginPath(); ctx.arc(0, 30, 7, 0, Math.PI * 2); fillO('#e0b13f');
+    rr(-22, -12, 44, 10, 4); fillO('#e0b13f');
+    ctx.beginPath(); ctx.moveTo(-7, -12); ctx.lineTo(-7, -96); ctx.lineTo(0, -112); ctx.lineTo(7, -96); ctx.lineTo(7, -12); ctx.closePath(); fillO('#dfe6ee');
+    ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(0, -98); ctx.lineWidth = 2; ctx.strokeStyle = '#a9b3bf'; ctx.stroke();
+  } else if (id === 'marteau') {
+    rr(-5, -84, 10, 110, 4); fillO('#8a5a33');
+    rr(-32, -118, 64, 40, 6); fillO('#9aa3ad');
+    rr(-32, -104, 64, 10, 0); fillO('#6f7882', 2);
+  } else if (id === 'hache') {
+    rr(-5, -88, 10, 114, 4); fillO('#8a5a33');
+    ctx.beginPath(); ctx.moveTo(4, -92); ctx.quadraticCurveTo(26, -112, 44, -110);
+    ctx.quadraticCurveTo(34, -78, 44, -48); ctx.quadraticCurveTo(24, -50, 4, -62); ctx.closePath(); fillO('#cfd6de');
+    ctx.beginPath(); ctx.moveTo(-4, -86); ctx.lineTo(-18, -78); ctx.lineTo(-4, -70); ctx.closePath(); fillO('#cfd6de');
+  } else if (id === 'baton') {
+    rr(-6, -118, 12, 214, 5); fillO('#a8743f');
+    for (const y of [-104, -94, 74, 84]) { rr(-7, y, 14, 6, 2); fillO('#5c3c22', 2); }
+    rr(-8, -124, 16, 10, 3); fillO('#e0b13f'); rr(-8, 92, 16, 10, 3); fillO('#e0b13f');
+  } else if (id === 'mains') {
+    fistShape(0, -6, 1.3, skin || '#f2c09a');
+  }
+}
+const WEAPON_SPAN = { epee: [-112, 37], marteau: [-118, 26], hache: [-112, 26], baton: [-124, 102], mains: [-46, 30] };
+function fistShape(x, y, s, color) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  rr(-17, -16, 34, 30, 9); fillO(color);
+  ctx.lineWidth = 2.5; ctx.strokeStyle = OUT; ctx.beginPath();
+  for (const fx of [-8, 0, 8]) { ctx.moveTo(fx, -16); ctx.lineTo(fx, -6); }
+  ctx.stroke();
+  rr(-21, -4, 14, 12, 5); fillO(color);
+  ctx.restore();
+}
+
+// ---- Skill pictograms, drawn in a -1..1 box -------------------------------------------
+function picto(id, u) { // u: pixels per unit
+  const L = (x1, y1, x2, y2, w = 0.12, c = CREAM) => limb(x1 * u, y1 * u, x2 * u, y2 * u, w * u, c);
+  if (id === 'poing') {
+    L(-0.95, -0.35, -0.45, -0.35, 0.09); L(-1.0, 0.0, -0.4, 0.0, 0.09); L(-0.95, 0.35, -0.45, 0.35, 0.09);
+    fistShape(0.25 * u, 0.05 * u, u / 34, CREAM);
+  } else if (id === 'combo') {
+    fistShape(-0.45 * u, 0.35 * u, u / 52, '#ffe0c8'); fistShape(-0.05 * u, -0.05 * u, u / 46, '#ffe9d9'); fistShape(0.4 * u, -0.45 * u, u / 40, CREAM);
+  } else if (id === 'uppercut') {
+    ctx.beginPath(); ctx.arc(-0.1 * u, 0.2 * u, 0.62 * u, Math.PI * 0.95, Math.PI * 1.55);
+    ctx.lineWidth = 0.14 * u + 6; ctx.strokeStyle = OUT; ctx.stroke(); ctx.lineWidth = 0.14 * u; ctx.strokeStyle = CREAM; ctx.stroke();
+    fistShape(0.25 * u, -0.25 * u, u / 34, CREAM);
+  } else if (id === 'arme') {
+    ctx.save(); ctx.rotate(Math.PI / 4); ctx.scale(u / 92, u / 92); ctx.translate(0, 38); weaponShape('epee'); ctx.restore();
+    ctx.beginPath(); ctx.arc(0, 0, 0.82 * u, -Math.PI * 0.95, -Math.PI * 0.45);
+    ctx.lineWidth = 0.1 * u + 6; ctx.strokeStyle = OUT; ctx.stroke(); ctx.lineWidth = 0.1 * u; ctx.strokeStyle = GOLD; ctx.stroke();
+  } else if (id === 'pied') {
+    L(-0.75, 0.85, -0.45, 0.15, 0.26, '#2f3a5c'); L(-0.45, 0.15, 0.25, -0.2, 0.24, '#2f3a5c');
+    ctx.save(); ctx.translate(0.3 * u, -0.22 * u); ctx.rotate(-0.45);
+    ctx.beginPath(); ctx.moveTo(-0.18 * u, -0.2 * u); ctx.lineTo(0.12 * u, -0.2 * u); ctx.lineTo(0.12 * u, -0.02 * u);
+    ctx.quadraticCurveTo(0.62 * u, -0.02 * u, 0.62 * u, 0.16 * u); ctx.lineTo(0.62 * u, 0.24 * u); ctx.lineTo(-0.18 * u, 0.24 * u); ctx.closePath(); fillO('#5a3a22');
+    rr(-0.2 * u, 0.2 * u, 0.86 * u, 0.1 * u, 0.04 * u); fillO(INK, 1); ctx.restore();
+    L(-0.95, -0.55, -0.45, -0.55, 0.07); L(-0.85, -0.25, -0.4, -0.25, 0.07);
+  } else if (id === 'charge') {
+    ctx.beginPath(); ctx.arc(0.35 * u, -0.45 * u, 0.28 * u, 0, Math.PI * 2); fillO(CREAM);
+    ctx.beginPath(); ctx.moveTo(-0.3 * u, -0.1 * u); ctx.lineTo(0.55 * u, -0.25 * u); ctx.lineTo(0.45 * u, 0.55 * u); ctx.lineTo(-0.45 * u, 0.6 * u); ctx.closePath(); fillO(CREAM);
+    L(-1.0, -0.2, -0.6, -0.2, 0.08); L(-1.05, 0.15, -0.7, 0.15, 0.08); L(-0.95, 0.5, -0.65, 0.5, 0.08);
+  } else if (id === 'saut') {
+    L(-0.85, 0.75, 0.85, 0.75, 0.1, '#5a3a22');
+    ctx.beginPath(); ctx.moveTo(-0.22 * u, -0.85 * u); ctx.lineTo(0.22 * u, -0.85 * u); ctx.lineTo(0.22 * u, -0.05 * u); ctx.lineTo(0.48 * u, -0.05 * u);
+    ctx.lineTo(0, 0.5 * u); ctx.lineTo(-0.48 * u, -0.05 * u); ctx.lineTo(-0.22 * u, -0.05 * u); ctx.closePath(); fillO(CREAM);
+    L(-0.75, 0.45, -0.5, 0.6, 0.07, GOLD); L(0.75, 0.45, 0.5, 0.6, 0.07, GOLD);
+  } else if (id === 'lancer') {
+    ctx.save(); ctx.translate(0.3 * u, -0.25 * u); ctx.rotate(0.9); ctx.scale(u / 70, u / 70); ctx.translate(0, 45); weaponShape('hache'); ctx.restore();
+    ctx.setLineDash([0.1 * u, 0.12 * u]); ctx.beginPath(); ctx.arc(0.2 * u, 0.1 * u, 0.85 * u, Math.PI * 0.55, Math.PI * 1.05);
+    ctx.lineWidth = 0.09 * u; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]);
+  } else if (id === 'boule') {
+    const flame = (s, c) => {
+      ctx.beginPath(); ctx.moveTo(0.35 * u * s, -0.45 * u * s);
+      ctx.quadraticCurveTo(-0.3 * u * s, -0.55 * u * s, -0.95 * u * s, -0.2 * u * s);
+      ctx.quadraticCurveTo(-0.55 * u * s, -0.05 * u * s, -0.85 * u * s, 0.25 * u * s);
+      ctx.quadraticCurveTo(-0.3 * u * s, 0.15 * u * s, -0.55 * u * s, 0.55 * u * s);
+      ctx.quadraticCurveTo(0.0, 0.5 * u * s, 0.35 * u * s, 0.45 * u * s);
+      ctx.arc(0.35 * u * s, 0, 0.45 * u * s, Math.PI / 2, -Math.PI / 2, true); ctx.closePath(); fillO(c, s > 0.8 ? 3 : 0.01);
+    };
+    flame(1, '#ffb347'); ctx.save(); ctx.translate(0.12 * u, 0); flame(0.6, '#ffe58a'); ctx.restore();
+  } else if (id === 'transfo') {
+    ctx.beginPath(); ctx.arc(0.5 * u, -0.55 * u, 0.32 * u, 0, Math.PI * 2); ctx.fillStyle = '#fff3b0'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0.62 * u, -0.62 * u, 0.28 * u, 0, Math.PI * 2); ctx.fillStyle = FAMILY.transformation.color; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-0.55 * u, -0.35 * u); ctx.lineTo(-0.45 * u, -0.95 * u); ctx.lineTo(-0.15 * u, -0.45 * u);
+    ctx.lineTo(0.15 * u, -0.45 * u); ctx.lineTo(0.35 * u, -0.95 * u); ctx.lineTo(0.45 * u, -0.3 * u);
+    ctx.quadraticCurveTo(0.6 * u, 0.1 * u, 0.25 * u, 0.25 * u); ctx.lineTo(0.15 * u, 0.75 * u); ctx.lineTo(-0.15 * u, 0.75 * u);
+    ctx.lineTo(-0.25 * u, 0.25 * u); ctx.quadraticCurveTo(-0.65 * u, 0.1 * u, -0.55 * u, -0.35 * u); ctx.closePath(); fillO('#7d6a5a');
+    ctx.fillStyle = GOLD; ctx.beginPath(); ctx.ellipse(-0.22 * u, -0.12 * u, 0.09 * u, 0.06 * u, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0.18 * u, -0.12 * u, 0.09 * u, 0.06 * u, -0.3, 0, Math.PI * 2); ctx.fill();
+    rr(-0.12 * u, 0.55 * u, 0.24 * u, 0.14 * u, 0.06 * u); fillO(INK, 1);
+  }
+}
+
+// ---- An icon: a family-coloured badge with its pictogram ----------------------------------
+function drawIcon(id, x, y, r, opts = {}) {
+  const it = ITEMS[id], fam = FAMILY[it.fam];
+  ctx.save(); ctx.translate(x, y);
+  if (opts.equipped) { ctx.beginPath(); ctx.arc(0, 0, r + 7, 0, Math.PI * 2); ctx.fillStyle = GOLD; ctx.fill(); }
+  if (opts.focus) { ctx.beginPath(); ctx.arc(0, 0, r + 12, 0, Math.PI * 2); ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); fillO(opts.dim ? '#8e879c' : fam.color, Math.max(2.5, r / 12));
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.82, 0, Math.PI * 2); ctx.lineWidth = Math.max(1.5, r / 18); ctx.strokeStyle = 'rgba(29,26,38,0.25)'; ctx.stroke();
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r - 2, 0, Math.PI * 2); ctx.clip();
+  if (WEAPON_SPAN[id]) {
+    const [a, b] = WEAPON_SPAN[id], len = b - a, s = (r * 1.55) / len;
+    ctx.rotate(Math.PI / 4); ctx.scale(s, s); ctx.translate(0, -(a + b) / 2); weaponShape(id, '#f2c09a');
+  } else picto(id, r * 0.62);
+  ctx.restore();
+  if (opts.equipped) { // a small check badge, drawn
+    ctx.translate(r * 0.72, -r * 0.72); ctx.beginPath(); ctx.arc(0, 0, Math.max(9, r * 0.28), 0, Math.PI * 2); fillO(GOLD, 2);
+    const k = Math.max(9, r * 0.28) * 0.55; ctx.beginPath(); ctx.moveTo(-k, 0); ctx.lineTo(-k * 0.2, k * 0.75); ctx.lineTo(k, -k * 0.7);
+    ctx.lineWidth = Math.max(2.5, r / 14); ctx.strokeStyle = INK; ctx.lineCap = 'round'; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ---- The fighter, in the game's simple shapes ---------------------------------------------
+function drawFighter(x, y, s, f) {
+  const skin = COS.skin.opts[f.skin], hc = COS.hairColor.opts[f.hairColor], shirt = COS.shirt.opts[f.shirt];
+  const outfit = COS.outfit.opts[f.outfit], wolf = f.skills.includes('transfo') && f.wolfPreview;
+  const w = WEAPONS.find(v => v.id === f.weapon);
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath(); ctx.ellipse(0, 86, 70, 12, 0, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
+  if (wolf) { ctx.beginPath(); ctx.moveTo(-30, -10); ctx.quadraticCurveTo(-90, -20, -100, -70); ctx.lineWidth = 22; ctx.strokeStyle = OUT; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineWidth = 15; ctx.strokeStyle = '#7d6a5a'; ctx.stroke(); }
+  limb(-18, 0, -28, 78, 22, '#2f3a5c'); limb(18, 0, 28, 78, 22, '#2f3a5c');
+  rr(-44, 72, 30, 14, 6); fillO('#4a3b2f'); rr(14, 72, 30, 14, 6); fillO('#4a3b2f');
+  const two = w && w.two, handR = [66, -28], handL = two ? [36, -8] : [-62, -8];
+  const armColor = outfit === 'tshirt' ? shirt : outfit === 'armure' ? '#9aa3ad' : skin;
+  limb(-38, -84, handL[0] * 0.5 - 38 * 0.5, (handL[1] - 84) / 2, 18, armColor === shirt ? shirt : skin);
+  limb(handL[0] * 0.5 - 38 * 0.5, (handL[1] - 84) / 2, handL[0], handL[1], 17, outfit === 'armure' ? '#9aa3ad' : skin);
+  if (outfit === 'torse') { rr(-40, -96, 80, 100, 18); fillO(skin); ctx.beginPath(); ctx.moveTo(-14, -66); ctx.quadraticCurveTo(-4, -58, -14, -50); ctx.moveTo(14, -66); ctx.quadraticCurveTo(4, -58, 14, -50); ctx.lineWidth = 2.5; ctx.strokeStyle = OUT; ctx.stroke(); }
+  else if (outfit === 'armure') { rr(-42, -98, 84, 104, 16); fillO('#9aa3ad'); for (const yy of [-66, -36]) { ctx.beginPath(); ctx.moveTo(-40, yy); ctx.lineTo(40, yy); ctx.lineWidth = 3; ctx.strokeStyle = OUT; ctx.stroke(); } rr(-50, -102, 26, 20, 8); fillO('#c3cad2'); rr(24, -102, 26, 20, 8); fillO('#c3cad2'); }
+  else { rr(-40, -96, 80, 100, 18); fillO(shirt); if (outfit === 'debardeur') { ctx.beginPath(); ctx.moveTo(-22, -96); ctx.quadraticCurveTo(0, -70, 22, -96); ctx.closePath(); fillO(skin, 2.5); } }
+  rr(-41, -6, 82, 12, 4); fillO('#4a3b2f');
+  if (w && w.id !== 'mains') {
+    ctx.save(); ctx.translate(handR[0], handR[1]); ctx.rotate(w.id === 'baton' ? -0.5 : 0.35); weaponShape(w.id); ctx.restore();
+  }
+  limb(38, -84, 54, -52, 18, armColor === shirt ? shirt : skin); limb(54, -52, handR[0], handR[1], 17, outfit === 'armure' ? '#9aa3ad' : skin);
+  if (wolf) { for (const [hx, hy] of [handR, handL]) for (const d of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(hx + d, hy + 8); ctx.lineTo(hx + d + 3, hy + 22); ctx.lineWidth = 4; ctx.strokeStyle = '#f3ede2'; ctx.stroke(); } }
+  const big = w && w.id === 'mains' ? 1.35 : 1;
+  for (const [hx, hy] of [handR, handL]) { ctx.beginPath(); ctx.arc(hx, hy, 11 * big, 0, Math.PI * 2); fillO(wolf ? '#7d6a5a' : skin); }
+  ctx.translate(0, -134);
+  if (COS.hair.opts[f.hair] === 'longs') { rr(-40, -20, 80, 70, 20); fillO(hc); }
+  if (wolf) { for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sx * 14, -28); ctx.lineTo(sx * 30, -62); ctx.lineTo(sx * 36, -20); ctx.closePath(); fillO('#7d6a5a'); } }
+  ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2); fillO(wolf ? '#8f7b69' : skin);
+  if (wolf) { rr(-18, 6, 36, 26, 12); fillO('#b8a48f'); ctx.beginPath(); ctx.ellipse(0, 10, 7, 5, 0, 0, Math.PI * 2); ctx.fillStyle = OUT; ctx.fill(); }
+  drawHair(COS.hair.opts[f.hair], hc);
+  for (const ex of [-13, 13]) { ctx.beginPath(); ctx.ellipse(ex, -4, 7, 9, 0, 0, Math.PI * 2); fillO(wolf ? GOLD : '#ffffff', 2); ctx.beginPath(); ctx.arc(ex + 2, -2, 3.6, 0, Math.PI * 2); ctx.fillStyle = OUT; ctx.fill(); }
+  if (COS.beard.opts[f.beard] && !wolf) { ctx.beginPath(); ctx.moveTo(-30, 8); ctx.quadraticCurveTo(-26, 40, 0, 44); ctx.quadraticCurveTo(26, 40, 30, 8); ctx.quadraticCurveTo(0, 26, -30, 8); fillO(hc, 2.5); }
+  else if (!wolf) { ctx.beginPath(); ctx.arc(0, 14, 9, 0.15 * Math.PI, 0.85 * Math.PI); ctx.lineWidth = 3; ctx.strokeStyle = OUT; ctx.stroke(); }
+  ctx.restore();
+}
+function drawHair(style, c) {
+  if (style === 'chauve') { ctx.beginPath(); ctx.ellipse(-12, -22, 9, 5, -0.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fill(); return; }
+  if (style === 'pics') { ctx.beginPath(); ctx.moveTo(-34, -10); for (let i = 0; i <= 6; i++) { const a = Math.PI + (i / 6) * Math.PI; ctx.lineTo(Math.cos(a) * 34, Math.sin(a) * 34 - 4); ctx.lineTo(Math.cos(a + Math.PI / 12) * 52, Math.sin(a + Math.PI / 12) * 52 - 4); } ctx.lineTo(34, -10); ctx.closePath(); fillO(c); return; }
+  if (style === 'bol') { ctx.beginPath(); ctx.arc(0, -4, 38, Math.PI, 0); ctx.lineTo(38, 0); ctx.lineTo(-38, 0); ctx.closePath(); fillO(c); return; }
+  if (style === 'iroquoise') { ctx.beginPath(); ctx.moveTo(-8, -30); ctx.quadraticCurveTo(-6, -72, 6, -78); ctx.quadraticCurveTo(14, -60, 10, -30); ctx.closePath(); fillO(c); return; }
+  ctx.beginPath(); ctx.arc(0, -6, 38, Math.PI * 1.02, Math.PI * 1.98); ctx.quadraticCurveTo(0, -18, -37, -12); ctx.closePath(); fillO(c);
+  if (style === 'chignon') { ctx.beginPath(); ctx.arc(0, -46, 15, 0, Math.PI * 2); fillO(c); }
+}
+
+// ---- Input: keys by position, pointer clicks queued for the step -------------------------
+const down = new Set(), hit = new Set(), clicks = [];
+const pressed = code => hit.has(code);
+let pointer = { x: -1, y: -1, touch: false };
+addEventListener('keydown', e => {
+  startAudio();
+  if (!e.repeat) { down.add(e.code); hit.add(e.code); }
+  if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => down.delete(e.code));
+function toLogical(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+}
+canvas.addEventListener('pointermove', e => { const p = toLogical(e); pointer = { ...p, touch: e.pointerType === 'touch' }; });
+canvas.addEventListener('pointerdown', e => { startAudio(); const p = toLogical(e); pointer = { ...p, touch: e.pointerType === 'touch' }; clicks.push({ ...p, touch: e.pointerType === 'touch' }); });
+canvas.addEventListener('pointerleave', () => { pointer = { x: -1, y: -1, touch: false }; });
+addEventListener('blur', () => down.clear());
+
+// ---- Audio: started on first input, mute on M --------------------------------------------
+let audio = null, muted = false;
+function startAudio() {
+  if (!audio) {
+    const ac = window.GAME_AUDIO || new (window.AudioContext || window.webkitAudioContext)();
+    const out = ac.createGain(); out.gain.value = muted ? 0 : tune.volume;
+    out.connect(ac.destination); audio = { ac, out };
+  }
+  if (audio.ac.state === 'suspended') audio.ac.resume();
+}
+function setMuted(m) { muted = m; if (audio) audio.out.gain.value = m ? 0 : tune.volume; }
+addEventListener('tune', () => setMuted(muted));
+function tone(freq, dur, type = 'triangle', vol = 0.25) {
+  if (!audio || muted) return;
+  const t = audio.ac.currentTime, o = audio.ac.createOscillator(), g = audio.ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(audio.out); o.start(t); o.stop(t + dur);
+}
+
+// ---- State and actions --------------------------------------------------------------------
+let scene, state;
+function reset() {
+  seed = Number(params.get('seed')) || CONFIG.seed;
+  state = {
+    t: 0, variant: params.get('variant') || 'A', tabB: 'armes',
+    fighter: {
+      weapon: pick(WEAPONS).id, skills: [], wolfPreview: false,
+      hair: Math.floor(rng() * COS.hair.opts.length), beard: Math.floor(rng() * 2),
+      outfit: Math.floor(rng() * COS.outfit.opts.length), skin: Math.floor(rng() * COS.skin.opts.length),
+      hairColor: Math.floor(rng() * COS.hairColor.opts.length), shirt: Math.floor(rng() * COS.shirt.opts.length),
+    },
+    focus: null, hover: null, hoverT: 0, pin: null, pinT: 0, msg: '', msgT: 0, tried: { A: false, B: false, C: false },
+  };
+  state.fighter.skills = [pick(SKILLS.slice(0, 4)).id];
+  state.tried[state.variant] = true;
+}
+function say(m) { state.msg = m; state.msgT = tune.message_time; events.push({ msg: m }); }
+function setWeapon(id) { state.fighter.weapon = id; tone(330, 0.12); say(`${ITEMS[id].name} en main`); }
+function toggleSkill(id) {
+  const s = state.fighter.skills, i = s.indexOf(id);
+  if (i >= 0) { s.splice(i, 1); tone(260, 0.1); say(`${ITEMS[id].name} retirée`); return; }
+  if (s.length >= tune.skill_slots) { tone(150, 0.18, 'square', 0.15); say(`Emplacements pleins (${tune.skill_slots}) : retire d’abord une compétence`); return; }
+  s.push(id); tone(440, 0.12); say(`${ITEMS[id].name} équipée`);
+}
+function cycleCos(k, d = 1) { const n = COS[k].opts.length; state.fighter[k] = (state.fighter[k] + d + n) % n; tone(380, 0.08); }
+function setVariant(v) { state.variant = v; state.tried[v] = true; state.focus = null; tone(520, 0.08); }
+
+// ---- Layout: each variant lists its interactive items; draw and input share it ------------
+function variantTabs(items) {
+  [['A', '1 · Fiche'], ['B', '2 · Onglets'], ['C', '3 · Silhouette']].forEach(([v, label], i) =>
+    items.push({ kind: 'variant', v, label, x: 370 + i * 184, y: 12, w: 176, h: 42, act: () => setVariant(v) }));
+}
+function layoutA() {
+  const items = []; variantTabs(items);
+  const r = tune.icon_a;
+  WEAPONS.forEach((w, i) => items.push({ kind: 'icon', id: w.id, x: 40, y: 112 + i * 96, w: 260, h: 88, r, cx: 40 + 52, cy: 112 + i * 96 + 44, label: 'right', act: () => setWeapon(w.id) }));
+  SKILLS.forEach((s, i) => { const c = i % 2, row = Math.floor(i / 2);
+    items.push({ kind: 'icon', id: s.id, x: 968 + c * 148, y: 106 + row * 98, w: 140, h: 94, r: r * 0.92, cx: 968 + c * 148 + 70, cy: 106 + row * 98 + 36, label: 'under', act: () => toggleSkill(s.id) }); });
+  COS_KEYS.forEach((k, i) => { const x = 24 + i * 206;
+    items.push({ kind: 'arrow', x: x, y: 636, w: 40, h: 56, dir: -1, act: () => cycleCos(k, -1) });
+    items.push({ kind: 'cos', k, x: x + 40, y: 636, w: 118, h: 56, act: () => cycleCos(k, 1) });
+    items.push({ kind: 'arrow', x: x + 158, y: 636, w: 40, h: 56, dir: 1, act: () => cycleCos(k, 1) }); });
+  return items;
+}
+function layoutB() {
+  const items = []; variantTabs(items);
+  [['armes', 'Armes'], ['competences', 'Compétences'], ['cosmetiques', 'Cosmétiques']].forEach(([t, label], i) =>
+    items.push({ kind: 'tab', t, label, x: 24 + i * 214, y: 72, w: 206, h: 48, act: () => { state.tabB = t; tone(480, 0.06); } }));
+  const r = tune.icon_b;
+  if (state.tabB === 'armes') WEAPONS.forEach((w, i) => items.push({ kind: 'card', id: w.id, x: 30 + i * 162, y: 150, w: 152, h: 230, r, cx: 30 + i * 162 + 76, cy: 220, act: () => setWeapon(w.id) }));
+  if (state.tabB === 'competences') SKILLS.forEach((s, i) => { const c = i % 5, row = Math.floor(i / 5);
+    items.push({ kind: 'card', id: s.id, x: 30 + c * 162, y: 140 + row * 280, w: 152, h: 266, r, cx: 30 + c * 162 + 76, cy: 140 + row * 280 + 68, act: () => toggleSkill(s.id) }); });
+  if (state.tabB === 'cosmetiques') COS_KEYS.forEach((k, row) => COS[k].opts.forEach((_, i) =>
+    items.push({ kind: 'chip', k, i, x: 180 + i * 80, y: 150 + row * 92, w: 72, h: 80, act: () => { state.fighter[k] = i; tone(380, 0.08); } })));
+  const slotsY = 566;
+  items.push({ kind: 'slot', slot: 'weapon', x: 880, y: slotsY, w: 92, h: 120, act: () => { state.tabB = 'armes'; } });
+  for (let i = 0; i < tune.skill_slots; i++) items.push({ kind: 'slot', slot: i, x: 980 + i * (280 / Math.max(3, tune.skill_slots)), y: slotsY, w: 280 / Math.max(3, tune.skill_slots) - 8, h: 120,
+    act: () => { const id = state.fighter.skills[i]; if (id) toggleSkill(id); else state.tabB = 'competences'; } });
+  return items;
+}
+const FIG_C = { x: 560, y: 368, s: 1.5 };
+function layoutC() {
+  const items = []; variantTabs(items);
+  const n = tune.skill_slots;
+  for (let i = 0; i < n; i++) {
+    const cx = FIG_C.x + 290 + Math.floor(i / 3) * 120, cy = 126 + (i % 3) * 102;
+    items.push({ kind: 'cslot', slot: i, x: cx - 40, y: cy - 40, w: 80, h: 80, cx, cy, anchor: [FIG_C.x, FIG_C.y - 120 * FIG_C.s], act: () => { const id = state.fighter.skills[i]; if (id) toggleSkill(id); else say('Choisis une compétence dans la réserve'); } }); }
+  items.push({ kind: 'cslot', slot: 'weapon', x: FIG_C.x + 250, y: FIG_C.y + 46, w: 92, h: 92, cx: FIG_C.x + 296, cy: FIG_C.y + 92, anchor: [FIG_C.x + 66 * FIG_C.s, FIG_C.y - 28 * FIG_C.s], act: () => say('Choisis une arme dans la réserve') });
+  [['hair', 'Coiffure', -330, -200, [FIG_C.x - 20 * FIG_C.s, FIG_C.y - 160 * FIG_C.s]], ['beard', 'Barbe', -360, -90, [FIG_C.x - 20 * FIG_C.s, FIG_C.y - 110 * FIG_C.s]],
+   ['outfit', 'Tenue', -360, 20, [FIG_C.x - 30 * FIG_C.s, FIG_C.y - 50 * FIG_C.s]], ['skin', 'Peau', -330, 120, [FIG_C.x - 62 * FIG_C.s, FIG_C.y - 8 * FIG_C.s]]].forEach(([k, label, dx, dy, anchor]) =>
+    items.push({ kind: 'ccos', k, label, x: FIG_C.x + dx - 80, y: FIG_C.y + dy - 30, w: 160, h: 60, anchor, act: () => cycleCos(k, 1) }));
+  ['hairColor', 'shirt'].forEach((k, i) => items.push({ kind: 'ccos', k, label: COS[k].label, x: W - 24 - 160, y: FIG_C.y - 250 + i * 74, w: 160, h: 60, act: () => cycleCos(k, 1) }));
+  const r = tune.icon_c, all = [...WEAPONS, ...SKILLS], gap = (W - 80) / all.length;
+  all.forEach((it, i) => items.push({ kind: 'icon', id: it.id, x: 40 + i * gap + gap / 2 - r - 6, y: 632 - r - 6, w: 2 * r + 12, h: 2 * r + 12, r, cx: 40 + i * gap + gap / 2, cy: 632, label: 'none',
+    act: () => (ITEMS[it.id].fam === 'arme' ? setWeapon(it.id) : toggleSkill(it.id)) }));
+  return items;
+}
+function layout() { return state.variant === 'A' ? layoutA() : state.variant === 'B' ? layoutB() : layoutC(); }
+const inside = (it, p) => p.x >= it.x && p.x <= it.x + it.w && p.y >= it.y && p.y <= it.y + it.h;
+function equipped(id) { return state.fighter.weapon === id || state.fighter.skills.includes(id); }
+function itemKey(it) { return `${it.kind}:${it.id || it.k || it.v || it.t || it.slot}:${it.i ?? ''}:${it.dir ?? ''}`; }
+
+// ---- Keyboard: spatial focus among items ------------------------------------------------
+function moveFocus(items, dx, dy) {
+  const cur = items.find(it => itemKey(it) === state.focus);
+  if (!cur) { state.focus = itemKey(items.find(it => it.kind !== 'variant') || items[0]); return; }
+  const c = { x: cur.x + cur.w / 2, y: cur.y + cur.h / 2 }; let best = null, bestD = Infinity;
+  for (const it of items) { if (it === cur) continue;
+    const p = { x: it.x + it.w / 2, y: it.y + it.h / 2 }, vx = p.x - c.x, vy = p.y - c.y;
+    const along = vx * dx + vy * dy; if (along <= 4) continue;
+    const d = along + Math.abs(vx * dy + vy * dx) * 2.5; if (d < bestD) { bestD = d; best = it; } }
+  if (best) state.focus = itemKey(best);
+}
+
+// ---- Scenes ---------------------------------------------------------------------------------
+const scenes = {
+  figures: {
+    update(dt) { state.t += dt; },
+    draw() {
+      clear(BG); text('Toutes les icônes et le combattant avec chaque arme', W / 2, 30, 22, CREAM, 'center', 'bold');
+      [...WEAPONS, ...SKILLS].forEach((it, i) => { const c = i % 5, row = Math.floor(i / 5), x = 160 + c * 240, y = 110 + row * 132;
+        drawIcon(it.id, x, y, 42); text(it.name, x, y + 58, 16, CREAM); });
+      WEAPONS.forEach((w, i) => { const f = { ...state.fighter, weapon: w.id, wolfPreview: false };
+        drawFighter(160 + i * 240, 600, 0.52, f); text(w.name, 160 + i * 240, 664, 15, CREAM); });
+      const f = { ...state.fighter, skills: ['transfo'], wolfPreview: true }; drawFighter(1230, 600, 0.4, f); text('Transfo', 1230, 664, 15, CREAM);
+    },
+  },
+  title: {
+    update() {
+      if (pressed('Enter') || pressed('Space') || clicks.length) { clicks.length = 0; reset(); scene = 'play'; }
+    },
+    draw() {
+      clear(BG); drawFighter(W / 2, 330, 1.0, state.fighter);
+      text(TITLE, W / 2, 70, 52, CREAM, 'center', 'bold');
+      text('Trois mises en page à comparer : choisis celle que tu préfères', W / 2, 118, 22, '#d8cfe8');
+      CONTROLS.forEach((c, i) => text(c, W / 2, 470 + i * 36, 22, '#d8cfe8'));
+      rr(W / 2 - 170, 630, 340, 56, 14); fillO(GOLD); text('Entrée ou clic pour commencer', W / 2, 658, 22, INK, 'center', 'bold');
+    },
+  },
+  play: {
+    update(dt) {
+      state.t += dt;
+      const items = layout();
+      if (pressed('Digit1') || pressed('Numpad1')) setVariant('A');
+      if (pressed('Digit2') || pressed('Numpad2')) setVariant('B');
+      if (pressed('Digit3') || pressed('Numpad3')) setVariant('C');
+      if (pressed('ArrowRight')) moveFocus(items, 1, 0);
+      if (pressed('ArrowLeft')) moveFocus(items, -1, 0);
+      if (pressed('ArrowDown')) moveFocus(items, 0, 1);
+      if (pressed('ArrowUp')) moveFocus(items, 0, -1);
+      if (pressed('Enter') || pressed('Space')) { const it = layout().find(i => itemKey(i) === state.focus); if (it) it.act(); }
+      while (clicks.length) { const c = clicks.shift(); const it = layout().find(i => inside(i, c));
+        if (it) { it.act(); if (c.touch && it.id) { state.pin = it.id; state.pinT = tune.touch_tooltip; } } }
+      const hov = pointer.touch ? null : layout().find(i => inside(i, pointer));
+      const key = hov && hov.id ? hov.id : null;
+      if (key !== state.hover) { state.hover = key; state.hoverT = 0; } else state.hoverT += dt;
+      if (state.pinT > 0) state.pinT -= dt;
+      if (state.msgT > 0) state.msgT -= dt;
+      state.fighter.wolfPreview = state.hover === 'transfo' || state.pin === 'transfo' && state.pinT > 0 || state.focus === 'icon:transfo::' || state.focus === 'card:transfo::';
+    },
+    draw() {
+      clear(BG);
+      const items = layout();
+      if (state.variant === 'A') drawA(items); else if (state.variant === 'B') drawB(items); else drawC(items);
+      for (const it of items.filter(i => i.kind === 'variant')) {
+        const on = state.variant === it.v; rr(it.x, it.y, it.w, it.h, 12); fillO(on ? GOLD : BG2, 3);
+        text(it.label, it.x + it.w / 2, it.y + it.h / 2 + 1, 20, on ? INK : CREAM, 'center', 'bold');
+        if (state.focus === itemKey(it)) focusRing(it);
+      }
+      text('Équipement partagé entre les variantes', 24, 34, 16, '#b9afcc', 'left');
+      text(`Vu : ${['A', 'B', 'C'].filter(v => state.tried[v]).join(' ')}`, W - 24, 34, 16, '#b9afcc', 'right');
+      drawTooltip(items);
+      if (state.msgT > 0) { ctx.font = `bold 18px ${FONT}`; const mw = ctx.measureText(state.msg).width + 40;
+        rr(W / 2 - mw / 2, H - 84, mw, 40, 12); fillO('#fff7d6', 2.5); text(state.msg, W / 2, H - 64, 18, INK, 'center', 'bold'); }
+    },
+  },
+};
+function clear(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+function focusRing(it) { rr(it.x - 5, it.y - 5, it.w + 10, it.h + 10, 14); ctx.setLineDash([7, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
+function equipSummary(x, y) {
+  const n = tune.skill_slots, f = state.fighter;
+  text(`Compétences ${f.skills.length}/${n}`, x, y, 16, '#d8cfe8', 'left', 'bold');
+}
+
+function drawA(items) {
+  panel(24, 70, 292, 600 - 70 + 0, PANEL); text('Armes', 44, 92, 22, INK, 'left', 'bold'); text('1 en main', 296, 92, 15, MUTED, 'right');
+  panel(956, 70, 300, 528, PANEL); text('Compétences', 976, 92, 22, INK, 'left', 'bold');
+  text(`${state.fighter.skills.length}/${tune.skill_slots}`, 1236, 92, 18, MUTED, 'right', 'bold');
+  ctx.beginPath(); ctx.ellipse(640, 540, 230, 40, 0, 0, Math.PI * 2); ctx.fillStyle = BG2; ctx.fill();
+  drawFighter(640, 450, 1.45, state.fighter);
+  for (const it of items) {
+    const focus = state.focus === itemKey(it);
+    if (it.kind === 'icon') {
+      const eq = equipped(it.id);
+      if (it.label === 'right') { rr(it.x, it.y, it.w, it.h, 12); ctx.fillStyle = eq ? '#fff3c4' : PANEL2; ctx.fill(); if (focus) focusRing(it);
+        drawIcon(it.id, it.cx, it.cy, it.r, { equipped: eq }); text(ITEMS[it.id].name, it.x + 108, it.cy - 10, 19, INK, 'left', 'bold');
+        text(eq ? 'En main' : 'Choisir', it.x + 108, it.cy + 16, 15, eq ? '#9a6a00' : MUTED, 'left'); }
+      else { if (focus) focusRing(it); drawIcon(it.id, it.cx, it.cy, it.r, { equipped: eq });
+        const lines = wrap(ITEMS[it.id].name, it.w - 6, 14, 'bold'); lines.slice(0, 2).forEach((l, j) => text(l, it.cx, it.cy + it.r + 18 + j * 16, 14, INK, 'center', 'bold')); }
+    } else if (it.kind === 'arrow') {
+      rr(it.x, it.y, it.w, it.h, 10); fillO(BG2, 2.5); if (focus) focusRing(it);
+      const mx = it.x + it.w / 2, my = it.y + it.h / 2; ctx.beginPath(); ctx.moveTo(mx - 7 * it.dir, my - 11); ctx.lineTo(mx + 8 * it.dir, my); ctx.lineTo(mx - 7 * it.dir, my + 11); ctx.closePath(); ctx.fillStyle = CREAM; ctx.fill();
+    } else if (it.kind === 'cos') {
+      rr(it.x, it.y, it.w, it.h, 10); fillO(PANEL, 2.5); if (focus) focusRing(it);
+      text(COS[it.k].label, it.x + it.w / 2, it.y + 16, 14, MUTED, 'center', 'bold');
+      if (isColor(it.k)) { rr(it.x + it.w / 2 - 22, it.y + 28, 44, 20, 6); fillO(COS[it.k].opts[state.fighter[it.k]], 2); }
+      else text(cosName(it.k, state.fighter[it.k]), it.x + it.w / 2, it.y + 39, 16, INK, 'center', 'bold');
+    }
+  }
+}
+function drawB(items) {
+  panel(24, 128, 830, 568, PANEL);
+  panel(866, 70, 390, 626, PANEL); text('Aperçu', 886, 94, 22, INK, 'left', 'bold');
+  ctx.beginPath(); ctx.ellipse(1060, 470, 150, 26, 0, 0, Math.PI * 2); ctx.fillStyle = PANEL2; ctx.fill();
+  drawFighter(1060, 390, 1.2, state.fighter);
+  text('Arme', 926, 552, 15, MUTED, 'center', 'bold'); text(`Compétences ${state.fighter.skills.length}/${tune.skill_slots}`, 1120, 552, 15, MUTED, 'center', 'bold');
+  for (const it of items) {
+    const focus = state.focus === itemKey(it);
+    if (it.kind === 'tab') { const on = state.tabB === it.t; rr(it.x, it.y, it.w, it.h + (on ? 14 : 0), 12); fillO(on ? PANEL : BG2, 3);
+      if (on) { ctx.fillStyle = PANEL; ctx.fillRect(it.x + 3, it.y + it.h + 2, it.w - 6, 14); }
+      text(it.label, it.x + it.w / 2, it.y + it.h / 2 + 2, 20, on ? INK : CREAM, 'center', 'bold'); if (focus) focusRing(it); }
+    else if (it.kind === 'card') { const eq = equipped(it.id), item = ITEMS[it.id];
+      rr(it.x, it.y, it.w, it.h, 14); fillO(eq ? '#fff3c4' : PANEL2, 2.5); if (focus) focusRing(it);
+      drawIcon(it.id, it.cx, it.cy, it.r, { equipped: eq });
+      wrap(item.name, it.w - 12, 17, 'bold').slice(0, 2).forEach((l, j) => text(l, it.cx, it.cy + it.r + 24 + j * 19, 17, INK, 'center', 'bold'));
+      const fy = it.cy + it.r + 24 + (wrap(item.name, it.w - 12, 17, 'bold').length > 1 ? 44 : 26);
+      wrap(item.fx, it.w - 16, 14).slice(0, 4).forEach((l, j) => text(l, it.cx, fy + j * 17, 14, '#4b4558'));
+      rr(it.x + 10, it.y + it.h - 30, it.w - 20, 22, 8); ctx.fillStyle = FAMILY[item.fam].color; ctx.fill();
+      text(FAMILY[item.fam].label, it.cx, it.y + it.h - 19, 13, INK, 'center', 'bold'); }
+    else if (it.kind === 'chip') { const on = state.fighter[it.k] === it.i;
+      if (it.i === 0) text(COS[it.k].label, 48, it.y + it.h / 2, 19, INK, 'left', 'bold');
+      rr(it.x, it.y, it.w, it.h, 12); fillO(on ? '#fff3c4' : PANEL2, on ? 4 : 2); if (focus) focusRing(it);
+      if (isColor(it.k)) { rr(it.x + 14, it.y + 14, it.w - 28, it.h - 28, 8); fillO(COS[it.k].opts[it.i], 2); }
+      else { const f = { ...state.fighter, [it.k]: it.i, weapon: 'mains', wolfPreview: false };
+        ctx.save(); ctx.beginPath(); ctx.roundRect(it.x + 2, it.y + 2, it.w - 4, it.h - 4, 10); ctx.clip();
+        drawFighter(it.x + it.w / 2, it.y + (it.k === 'outfit' ? 64 : 120), it.k === 'outfit' ? 0.3 : 0.5, f); ctx.restore(); }
+      if (on) { rr(it.x, it.y, it.w, it.h, 12); ctx.lineWidth = 4; ctx.strokeStyle = '#d99a00'; ctx.stroke(); } }
+    else if (it.kind === 'slot') { const id = it.slot === 'weapon' ? state.fighter.weapon : state.fighter.skills[it.slot];
+      rr(it.x, it.y, it.w, it.h, 12); fillO(id ? PANEL2 : '#ece5d6', 2.5); if (focus) focusRing(it);
+      const r = Math.min(it.w, it.h) * 0.36;
+      if (id) { drawIcon(id, it.x + it.w / 2, it.y + 46, r); wrap(ITEMS[id].name, it.w - 6, 13, 'bold').slice(0, 2).forEach((l, j) => text(l, it.x + it.w / 2, it.y + 88 + j * 15, 13, INK, 'center', 'bold')); }
+      else { ctx.beginPath(); ctx.arc(it.x + it.w / 2, it.y + 46, r, 0, Math.PI * 2); ctx.setLineDash([6, 5]); ctx.lineWidth = 2.5; ctx.strokeStyle = MUTED; ctx.stroke(); ctx.setLineDash([]);
+        text('Vide', it.x + it.w / 2, it.y + 96, 14, MUTED, 'center', 'bold'); } }
+  }
+}
+function drawC(items) {
+  ctx.beginPath(); ctx.ellipse(FIG_C.x, FIG_C.y + 130, 210, 34, 0, 0, Math.PI * 2); ctx.fillStyle = BG2; ctx.fill();
+  for (const it of items.filter(i => i.anchor)) { const cx = it.cx ?? it.x + it.w / 2, cy = it.cy ?? it.y + it.h / 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(it.anchor[0], it.anchor[1]); ctx.setLineDash([5, 6]); ctx.lineWidth = 2; ctx.strokeStyle = '#8f84a8'; ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(it.anchor[0], it.anchor[1], 5, 0, Math.PI * 2); ctx.fillStyle = '#8f84a8'; ctx.fill(); }
+  drawFighter(FIG_C.x, FIG_C.y, FIG_C.s, state.fighter);
+  rr(24, 578, W - 48, 118, 16); fillO(PANEL, 3); text('Réserve : clique une arme pour l’avoir en main, une compétence pour l’équiper', 44, 596, 15, MUTED, 'left', 'bold');
+  ctx.beginPath(); ctx.moveTo(40 + 5 * ((W - 80) / 15), 612); ctx.lineTo(40 + 5 * ((W - 80) / 15), 680); ctx.lineWidth = 2; ctx.strokeStyle = PANEL2; ctx.stroke();
+  for (const it of items) {
+    const focus = state.focus === itemKey(it);
+    if (it.kind === 'cslot') { const id = it.slot === 'weapon' ? state.fighter.weapon : state.fighter.skills[it.slot]; const r = it.w / 2;
+      if (focus) { ctx.beginPath(); ctx.arc(it.cx, it.cy, r + 9, 0, Math.PI * 2); ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = CREAM; ctx.stroke(); ctx.setLineDash([]); }
+      if (id) drawIcon(id, it.cx, it.cy, r - 4); else { ctx.beginPath(); ctx.arc(it.cx, it.cy, r - 4, 0, Math.PI * 2); ctx.fillStyle = BG2; ctx.fill(); ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = '#8f84a8'; ctx.stroke(); ctx.setLineDash([]); text('+', it.cx, it.cy + 1, 30, '#8f84a8', 'center', 'bold'); }
+      text(it.slot === 'weapon' ? 'Arme' : `Compétence ${it.slot + 1}`, it.cx, it.cy + r + 14, 14, '#d8cfe8', 'center', 'bold'); }
+    else if (it.kind === 'ccos') { rr(it.x, it.y, it.w, it.h, 12); fillO(BG2, 2.5); if (focus) focusRing(it);
+      text(it.label, it.x + 14, it.y + 18, 14, '#b9afcc', 'left', 'bold');
+      if (isColor(it.k)) { rr(it.x + 14, it.y + 32, 60, 18, 6); fillO(COS[it.k].opts[state.fighter[it.k]], 2); }
+      else text(cosName(it.k, state.fighter[it.k]), it.x + 14, it.y + 41, 17, CREAM, 'left', 'bold');
+      ctx.beginPath(); const ax = it.x + it.w - 22, ay = it.y + it.h / 2; ctx.moveTo(ax - 6, ay - 9); ctx.lineTo(ax + 6, ay); ctx.lineTo(ax - 6, ay + 9); ctx.closePath(); ctx.fillStyle = CREAM; ctx.fill(); }
+    else if (it.kind === 'icon') { if (focus) focusRing(it); drawIcon(it.id, it.cx, it.cy, it.r, { equipped: equipped(it.id) }); }
+  }
+}
+function drawTooltip(items) {
+  let id = null, at = null;
+  if (state.pin && state.pinT > 0) id = state.pin;
+  else if (state.hover && state.hoverT >= tune.tooltip_delay) id = state.hover;
+  else { const f = items.find(i => itemKey(i) === state.focus); if (f && f.id) id = f.id; }
+  if (!id) return;
+  at = items.find(i => i.id === id); if (!at) return;
+  const item = ITEMS[id], fam = FAMILY[item.fam], tw = 300, lines = wrap(item.fx, tw - 32, 16);
+  const th = 76 + lines.length * 20;
+  let x = at.x + at.w + 12, y = at.y; if (x + tw > W - 8) x = at.x - tw - 12; if (x < 8) x = Math.min(W - tw - 8, Math.max(8, at.x));
+  if (y + th > H - 8) y = H - th - 8; if (x < at.x + at.w && x + tw > at.x && y < at.y + at.h) y = at.y - th - 10; y = Math.max(60, y);
+  rr(x, y, tw, th, 12); fillO('#fffaf0', 3);
+  rr(x, y, tw, 8, [12, 12, 0, 0]); ctx.fillStyle = fam.color; ctx.fill();
+  text(item.name, x + 16, y + 32, 20, INK, 'left', 'bold');
+  text(`${fam.label}${equipped(id) ? ' · équipé' : ''}`, x + 16, y + 56, 15, MUTED, 'left', 'bold');
+  lines.forEach((l, j) => text(l, x + 16, y + 82 + j * 20, 16, '#3a3446', 'left'));
+}
+
+// ---- Loop: fixed step, frame time clamped ---------------------------------------------
+function step() {
+  if (pressed('KeyM')) { setMuted(!muted); hit.delete('KeyM'); }
+  scenes[scene].update(STEP); hit.clear();
+}
+let last, acc = 0, ALPHA = 1;
+function tick() {
+  const now = clock.now();
+  acc += Math.min(now - last, 0.25); last = now;
+  while (acc >= STEP) { step(); acc -= STEP; }
+  ALPHA = acc / STEP;
+  drawFrame();
+}
+function drawFrame() { scenes[scene].draw(); }
+function frame() { tick(); requestAnimationFrame(frame); }
+function timer() { if (document.visibilityState === 'visible' && clock.now() - last > 0.1) tick(); }
+
+window.game = {
+  get scene() { return scene; },
+  get state() { return state; },
+  press(code) { hit.add(code); },
+  hold(code, on) { on ? down.add(code) : down.delete(code); },
+  get events() { return events; },
+  step(n = 1, draw = true, alpha = 1) {
+    for (let i = 0; i < n; i++) step();
+    if (draw) { ALPHA = alpha; drawFrame(); }
+  },
+};
+
+reset();
+scene = params.get('scene') || 'title';
+fit();
+last = clock.now();
+if (params.get('manual') === '1') drawFrame();
+else { requestAnimationFrame(frame); setInterval(timer, 50); }
+</script>
+</body>
+</html>

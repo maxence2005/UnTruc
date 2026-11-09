@@ -1,0 +1,18 @@
+L1	pass	evidence/figures.png	contours sombres épais, aplats vifs, pastilles colorées par famille, aucun emoji
+L2	pass	evidence/nearest-game.txt	icônes lisibles comme référence ; mise en page propre aux 3 variantes
+L3	pass	evidence/variant-A.png	2D, écran fixe, combattant de face au centre (A, C) ou sur le côté (B)
+F1	pass	evidence/variant-A.png	armes à gauche, compétences à droite, combattant au centre, cosmétiques en bas
+F2	pass	evidence/play.png	onglets Armes/Compétences/Cosmétiques, grande grille, aperçu et emplacements à droite
+F3	pass	evidence/variant-C.png	emplacements reliés au corps, arme près de la main, réserve en bas
+F4	pass	evidence/figures.png	15 icônes, chacune sa silhouette (index.html:220)
+F5	pass	index.html:573	info-bulle nom, famille, effet au survol (délai config) ou au toucher (index.html:458) ; visible dans play.png au focus
+F6	pass	evidence/variant-A.png	coiffure, barbe, tenue, peau, cheveux, haut ; drawFighter relit l'état à chaque image (index.html:242)
+F7	pass	index.html:351	état unique partagé, bascule 1/2/3 et boutons en haut
+M1	pass	index.html:330	variante A par défaut, combattant tiré du seed
+M2	pass	index.html:573	nom et effet au survol
+M3	pass	evidence/variant-A.png	hache choisie, tenue aussitôt en main (setWeapon index.html:343)
+M4	pass	evidence/play.png	compétence ajoutée puis bascule vers B au clavier pendant le check ; « Vu : A B »
+M5	not_assessed	brief.md	marque *(guessed)* lue comme une phrase, rien à construire
+C1	pass	index.html:330	aucun écran d'échec : c'est une maquette
+C2	pass	index.html:344	1 arme, compétences limitées à skill_slots (3), message si plein
+C3	not_assessed	brief.md	marque *(provisional)* lue comme une phrase, rien à construire

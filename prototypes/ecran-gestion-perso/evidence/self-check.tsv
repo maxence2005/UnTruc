@@ -1,0 +1,94 @@
+time	2026-11-09 21:29:48
+keep	lines	0	pinned	0
+checklist	L1	unlisted	-	Look: formes simples du jeu (piste 5 du prototype de combat) : contours sombres épais, aplats de couleurs vives ; icônes dessinées en code (silhouette d'arme, pictogramme de compétence) sur pastille colorée par famille (frappe, mouvement, magie, transformation, arme) ; combattant dessiné en grand. Chaque figure dessinée, jamais d'emoji, jamais de rond nu. *(guessed)*	
+checklist	L2	unlisted	-	References: La Brute (armes et compétences lisibles en petites icônes ; ses valeurs, pas sa mise en page). Aucun fichier dans `references/`.	
+checklist	L3	unlisted	-	View: 2D · Camera: écran fixe, combattant de face au centre ou sur le côté selon la variante. *(guessed)*	
+checklist	F1	unlisted	-	Variante A « Fiche » : combattant au centre, armes d'un côté, compétences de l'autre, cosmétiques en bas	
+checklist	F2	unlisted	-	Variante B « Onglets » : onglets Armes / Compétences / Cosmétiques en grande grille, aperçu et emplacements sur le côté	
+checklist	F3	unlisted	-	Variante C « Silhouette » : emplacements autour du corps (arme près de la main, compétences en badges), réserve en dessous	
+checklist	F4	unlisted	-	5 armes (mains nues, épée, marteau, hache, bâton) et 10 compétences, chacune avec sa propre icône dessinée	
+checklist	F5	unlisted	-	Info-bulle nom + effet au survol ou au toucher	
+checklist	F6	unlisted	-	Cosmétiques : coiffure, barbe, tenue, couleurs ; le combattant change en direct	
+checklist	F7	unlisted	-	Même équipement partagé entre les 3 variantes, bascule 1/2/3	
+checklist	M1	unlisted	-	L'écran s'ouvre sur la variante A avec un combattant tiré au hasard.	
+checklist	M2	unlisted	-	On survole une icône : son nom et son effet s'affichent.	
+checklist	M3	unlisted	-	On clique le marteau : le combattant le tient aussitôt.	
+checklist	M4	unlisted	-	On ajoute deux compétences, on change de coiffure, puis on bascule sur B et C (1/2/3 ou boutons) avec le même équipement pour comparer.	
+checklist	M5	unlisted	-	*(guessed)*	
+checklist	C1	unlisted	-	Aucun échec : c'est une maquette.	
+checklist	C2	unlisted	-	La contrainte est le nombre d'emplacements (1 arme, 3 compétences) qui force à choisir.	
+checklist	C3	unlisted	-	*(provisional)*	
+browser	HeadlessChrome/157.0.0.0
+scene	play	0	title
+scene	play	1	play
+digits	log	22px "Trebuchet MS", "Segoe UI", system-ui, sans-serif	tabular	0
+digits	log	15px "Trebuchet MS", "Segoe UI", system-ui, sans-serif	tabular	0
+digits	log	bold 18px "Trebuchet MS", "Segoe UI", system-ui, sans-serif	tabular	0
+digits	log	bold 20px "Trebuchet MS", "Segoe UI", system-ui, sans-serif	tabular	0
+digits	log	bold 15px "Trebuchet MS", "Segoe UI", system-ui, sans-serif	tabular	0
+measure	step-time	play	0.014	0.500	208
+lane	play	stop	3.5	79
+uncaught	play	0
+text	play	canvas	886,84,958,105	30.4	14.68	inside	Aperçu
+text	play	canvas	907,545,944,556	20.7	4.85	inside	Arme
+text	play	canvas	1060,545,1180,559	20.7	4.85	inside	Compétences 1/3
+text	play	canvas	98,89,156,104	27.6	11.28	inside	Armes
+text	play	canvas	279,89,403,108	27.6	14.68	inside	Compétences
+text	play	canvas	497,89,614,108	27.6	11.28	inside	Cosmétiques
+text	play	canvas	50,270,162,286	23.5	12.54	inside	Coup de poing
+text	play	canvas	53,298,158,311	19.3	6.72	inside	Un direct rapide,
+text	play	canvas	44,315,167,328	19.3	6.72	inside	toujours disponible.
+text	play	canvas	86,381,127,393	17.9	6.61	inside	Frappe
+text	play	canvas	212,270,324,283	23.5	12.54	inside	Enchaînement
+text	play	canvas	203,297,333,311	19.3	6.72	inside	Trois coups à la suite
+text	play	canvas	203,315,332,328	19.3	6.72	inside	si le premier touche.
+text	play	canvas	248,381,289,393	17.9	6.61	inside	Frappe
+text	play	canvas	394,271,466,286	23.5	15.37	inside	Uppercut
+text	play	canvas	370,298,490,311	19.3	8.24	inside	Frappe vers le haut
+text	play	canvas	395,314,465,328	19.3	8.24	inside	qui soulève
+text	play	canvas	391,332,468,342	19.3	8.24	inside	l’adversaire.
+text	play	canvas	410,381,451,393	17.9	6.61	inside	Frappe
+text	play	canvas	542,270,642,286	23.5	12.54	inside	Coup d’arme
+text	play	canvas	538,297,645,311	19.3	6.72	inside	Attaque propre à
+text	play	canvas	542,315,642,325	19.3	6.72	inside	l’arme tenue en
+text	play	canvas	575,332,608,342	19.3	6.72	inside	main.
+text	play	canvas	572,381,613,393	17.9	6.61	inside	Frappe
+text	play	canvas	702,270,805,286	23.5	12.54	inside	Coup de pied
+text	play	canvas	733,289,775,302	23.5	12.54	inside	sauté
+text	play	canvas	692,316,816,329	19.3	6.72	inside	Bond en avant, pied
+text	play	canvas	734,333,773,343	19.3	6.72	inside	tendu.
+text	play	canvas	719,381,789,391	17.9	8.10	inside	Mouvement
+text	play	canvas	42,550,170,566	23.5	12.54	inside	Charge d’épaule
+text	play	canvas	50,578,162,588	19.3	6.72	inside	Fonce et bouscule
+text	play	canvas	47,595,164,605	19.3	6.72	inside	l’adversaire au sol.
+text	play	canvas	71,661,141,671	17.9	8.10	inside	Mouvement
+text	play	canvas	215,550,321,563	23.5	12.54	inside	Saut écrasant
+text	play	canvas	202,578,334,588	19.3	6.72	inside	Saute et retombe sur
+text	play	canvas	243,595,292,605	19.3	6.72	inside	la cible.
+text	play	canvas	233,661,303,671	17.9	8.10	inside	Mouvement
+text	play	canvas	373,550,488,563	23.5	12.54	inside	Lancer d’arme
+text	play	canvas	377,577,482,588	19.3	6.72	inside	Jette son arme à
+text	play	canvas	366,595,494,608	19.3	6.72	inside	distance, puis se bat
+text	play	canvas	388,611,471,622	19.3	6.72	inside	à mains nues.
+text	play	canvas	395,661,465,671	17.9	8.10	inside	Mouvement
+text	play	canvas	543,550,641,563	23.5	12.54	inside	Boule de feu
+text	play	canvas	529,577,656,591	19.3	6.72	inside	Projectile enflammé
+text	play	canvas	550,594,633,605	19.3	6.72	inside	lancé de loin.
+text	play	canvas	575,661,609,673	17.9	5.36	inside	Magie
+text	play	canvas	694,550,813,563	23.5	12.54	inside	Transformation
+text	play	canvas	695,578,813,591	19.3	6.72	inside	Devient loup-garou
+text	play	canvas	699,595,808,608	19.3	6.72	inside	en plein combat :
+text	play	canvas	702,612,805,625	19.3	6.72	inside	griffes et queue.
+text	play	canvas	708,661,799,671	17.9	8.93	inside	Transformation
+text	play	canvas	893,648,959,658	17.9	12.54	inside	Mains nues
+text	play	canvas	995,648,1051,660	17.9	12.54	inside	Uppercut
+text	play	canvas	1102,655,1130,666	19.3	4.50	inside	Vide
+text	play	canvas	1195,655,1223,666	19.3	4.50	inside	Vide
+text	play	canvas	419,25,499,40	27.6	11.28	inside	1 · Fiche
+text	play	canvas	593,25,692,44	27.6	11.84	inside	2 · Onglets
+text	play	canvas	764,25,889,40	27.6	11.28	inside	3 · Silhouette
+text	play	canvas	25,24,308,42	22.1	7.15	inside	Équipement partagé entre les variantes
+text	play	canvas	1200,27,1255,39	22.1	7.15	inside	Vu : A B
+screen	play	drawn
+shot	play	prototypes/ecran-gestion-perso/evidence/play.png
+responds	changed	34

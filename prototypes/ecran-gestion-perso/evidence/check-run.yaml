@@ -1,0 +1,115 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/157.0.0.0"
+time: "2026-11-09 21:29:48"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: pass
+    evidence:
+      - "evidence/play.png"
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "Look: formes simples du jeu (piste 5 du prototype de combat) : contours sombres épais, aplats de couleurs vives ; icônes dessinées en code (silhouette d'arme, pictogramme de compétence) sur pastille colorée par famille (frappe, mouvement, magie, transformation, arme) ; combattant dessiné en grand. Chaque figure dessinée, jamais d'emoji, jamais de rond nu. *(guessed)*"
+  - id: L2
+    result: pass
+    evidence: "evidence/nearest-game.txt"
+    item: "References: La Brute (armes et compétences lisibles en petites icônes ; ses valeurs, pas sa mise en page). Aucun fichier dans `references/`."
+  - id: L3
+    result: pass
+    evidence: "evidence/variant-A.png"
+    item: "View: 2D · Camera: écran fixe, combattant de face au centre ou sur le côté selon la variante. *(guessed)*"
+  - id: F1
+    result: pass
+    evidence: "evidence/variant-A.png"
+    item: "Variante A « Fiche » : combattant au centre, armes d'un côté, compétences de l'autre, cosmétiques en bas"
+  - id: F2
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Variante B « Onglets » : onglets Armes / Compétences / Cosmétiques en grande grille, aperçu et emplacements sur le côté"
+  - id: F3
+    result: pass
+    evidence: "evidence/variant-C.png"
+    item: "Variante C « Silhouette » : emplacements autour du corps (arme près de la main, compétences en badges), réserve en dessous"
+  - id: F4
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "5 armes (mains nues, épée, marteau, hache, bâton) et 10 compétences, chacune avec sa propre icône dessinée"
+  - id: F5
+    result: pass
+    evidence: "index.html:573"
+    item: "Info-bulle nom + effet au survol ou au toucher"
+  - id: F6
+    result: pass
+    evidence: "evidence/variant-A.png"
+    item: "Cosmétiques : coiffure, barbe, tenue, couleurs ; le combattant change en direct"
+  - id: F7
+    result: pass
+    evidence: "index.html:351"
+    item: "Même équipement partagé entre les 3 variantes, bascule 1/2/3"
+  - id: M1
+    result: pass
+    evidence: "index.html:330"
+    item: "L'écran s'ouvre sur la variante A avec un combattant tiré au hasard."
+  - id: M2
+    result: pass
+    evidence: "index.html:573"
+    item: "On survole une icône : son nom et son effet s'affichent."
+  - id: M3
+    result: pass
+    evidence: "evidence/variant-A.png"
+    item: "On clique le marteau : le combattant le tient aussitôt."
+  - id: M4
+    result: pass
+    evidence: "evidence/play.png"
+    item: "On ajoute deux compétences, on change de coiffure, puis on bascule sur B et C (1/2/3 ou boutons) avec le même équipement pour comparer."
+  - id: M5
+    result: not_run
+    mark: not assessed
+    why: "marque *(guessed)* lue comme une phrase, rien à construire"
+    evidence: "brief.md"
+    item: "*(guessed)*"
+  - id: C1
+    result: pass
+    evidence: "index.html:330"
+    item: "Aucun échec : c'est une maquette."
+  - id: C2
+    result: pass
+    evidence: "index.html:344"
+    item: "La contrainte est le nombre d'emplacements (1 arme, 3 compétences) qui force à choisir."
+  - id: C3
+    result: not_run
+    mark: not assessed
+    why: "marque *(provisional)* lue comme une phrase, rien à construire"
+    evidence: "brief.md"
+    item: "*(provisional)*"
+measures:
+  - id: step-time
+    value: 0.500
+    unit: ms
+    by: browser
+    detail: "mean 0.014 ms, slowest 0.500 ms, 208 steps"
