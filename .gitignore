@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+
+# Fichiers locaux du framework Claude Code Game Studios
+project.local.yaml
+CLAUDE.local.md
+.claude/settings.local.json
+production/session-state/
+production/session-logs/
