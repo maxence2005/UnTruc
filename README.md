@@ -1,6 +1,6 @@
 # UnTruc
 
-Jeu web perso, destiné à `jeu.untruc.fr`. Idée de départ : un auto-battler au tour par tour dans l'esprit de La Brute.
+Jeu web perso, destiné à `jeu.untruc.fr`. Idée de départ : un auto-battler dans l'esprit de La Brute, où les combattants agissent chacun à leur rythme (pas de tour par tour).
 
 ## Prototypes de combat
 

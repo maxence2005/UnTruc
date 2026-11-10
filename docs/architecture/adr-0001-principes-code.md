@@ -2,10 +2,9 @@
 
 ## Status
 
-Proposed
+Accepted
 
-> Seul Maxence (ou `technical-director` sur sa confirmation explicite) passe ce
-> statut à `Accepted`, via `/architecture-decision accept ADR-0001`.
+> Accepté par Maxence le 2026-11-10, avec les réponses de la section « Questions tranchées ».
 
 ## Date
 
@@ -13,7 +12,7 @@ Proposed
 
 ## Last Verified
 
-2026-11-09
+2026-11-10
 
 ## Decision Makers
 
@@ -87,11 +86,11 @@ content ──types──▶ core ◀── physics ◀── render (lecture se
 
 | Couche | Rôle | Dépend de |
 |---|---|---|
-| `core/` | Règles du combat : stats, tours, dégâts, IA de combat, timelines. TypeScript pur, **sans Phaser**. | rien |
+| `core/` | Règles du combat : stats, délais d'action, dégâts, IA de combat, timelines. Pas de tour par tour. TypeScript pur, **sans Phaser**. | rien |
 | `physics/` | Ragdoll, muscles, articulations. Adaptateur autour de Matter.js. | `core` |
 | `render/` | Dessin des persos, cosmétiques, armes, effets. Phaser. | `core`, `physics` (lecture seule) |
 | `ui/` | HUD, menus, écrans. | `core` (lecture seule) |
-| `content/` | Données : armes, compétences, cosmétiques, archétypes. | types de `core` |
+| `content/` | Données : combattants, armes, compétences, cosmétiques. | types de `core` |
 
 Une couche ne remonte jamais vers une couche supérieure. Le rendu lit l'état, il ne le modifie pas.
 
@@ -166,7 +165,7 @@ Cet ADR ne fixe aucune signature. Il impose seulement : un registre par type de 
 ## Risks
 
 - **Le déterminisme ne tient pas avec Matter.js** (flottants, ordre des contacts). Mitigation : test « même seed, même suite d'événements » dès le build order 1.
-- **Les frontières de couches s'érodent** sans outil qui les vérifie. Mitigation : voir Open questions.
+- **Les frontières de couches s'érodent** sans outil qui les vérifie. Mitigation : test des imports de `core/` (question 7).
 
 ## GDD Requirements Addressed
 
@@ -200,19 +199,19 @@ Aucun code de production existant à migrer ; le prototype n'est pas migré, il 
 - Deux combats à même seed produisent la même suite d'événements.
 - Le test de validation du contenu passe sur tous les registres.
 
-## Open questions
+## Questions tranchées
 
-À trancher par Maxence ; cet ADR ne décide rien sur ces points.
+Réponses validées par Maxence le 2026-11-10.
 
-1. **Dossiers hors tableau.** `src/` contient aussi `scenes/`, `shared/`, `puppet/`, `ragdoll/`, `debug/`. Où se placent-ils dans les couches ? `ragdoll/` et `puppet/` sont-ils `physics/` ? `shared/` est-il un fourre-tout déguisé (interdit §7 du brouillon) ou une couche à définir ?
-2. **Accès à Matter.js.** `physics/` passe-t-il par le plugin Matter de la scène Phaser (alors `physics` dépend de Phaser et ne se teste pas sans navigateur) ou par le moteur Matter.js seul, piloté hors Phaser ? Le brouillon dit « adaptateur autour de Matter.js » sans trancher.
-3. **Portée du déterminisme.** « Même seed = même combat » sur la même machine seulement, ou aussi entre navigateurs ? Matter.js en flottants ne garantit pas le second ; cela compte si les duels asynchrones de la ligue (later) rejouent un combat chez un autre joueur.
-4. **Valeur du pas fixe** (ex. 60 Hz ?) et lien entre « tours » de `core` et pas physiques : le brief dit « tour par tour », le combat est une simulation continue.
-5. **Format du contenu.** Objets TypeScript ou JSON validé ? Si JSON, quelle validation (librairie à approuver : aucune n'est listée dans Allowed Libraries) ?
-6. **« Archétypes » dans `content/`.** Le brief précise que le loup-garou est une compétence, pas un archétype. Le dossier `content/archetypes` a-t-il encore une raison d'être ?
-7. **Vérification des frontières.** Faut-il un outil (règle de lint sur les imports, test qui scanne `core/`) ou la revue suffit-elle ? La limite de 300 lignes est-elle indicative ou vérifiée ?
-8. **Vitest pas encore installé.** Le brouillon l'impose ; `package.json` ne le contient pas. Version épinglée par le template : 5.0.5 (`VERSION.md`). À ajouter via `/test-setup`.
-9. **Bus et RNG : qui les possède ?** Instances créées par combat et injectées (cohérent avec « pas de singleton mutable ») : à confirmer, et dans quelle couche vit le type des événements (`core` a priori).
+1. **Dossiers hors tableau.** `scenes/` assemble les pièces et ne contient aucune règle de jeu. `debug/` est en lecture seule. `shared/`, `puppet/` et `ragdoll/` n'existent que dans le prototype, hors règles.
+2. **Accès à Matter.js.** Par le plugin Matter de la scène Phaser, derrière l'interface `DuelWorld` déclarée dans `core/`. `core/` se teste sans navigateur ; `physics/` non.
+3. **Portée du déterminisme.** Pour le MVP : même seed = même combat sur la même machine et le même navigateur. Maxence prévoit qu'un autre joueur revoie un jour le même combat (ligue, later). Piste retenue : enregistrer le déroulé du duel sous forme de données (journal des événements et des états, pas une vidéo) et le rejouer chez l'autre joueur, plutôt que de compter sur une physique identique entre navigateurs. Format à décider dans un ADR dédié quand la ligue arrive. Conséquence dès maintenant : tout ce qui se passe dans un duel doit passer par le bus d'événements, pour pouvoir être enregistré.
+4. **Pas fixe.** 60 Hz. Il n'y a pas de tours : chaque combattant a son délai d'action, compté en pas de simulation.
+5. **Format du contenu.** Objets TypeScript typés ; le compilateur valide. Aucune librairie de validation.
+6. **Archétypes.** Pas de dossier `content/archetypes` : le loup-garou est une compétence. Les combattants sont dans `content/fighters.ts`.
+7. **Vérification des frontières.** Un test qui scanne les imports de `core/`, à écrire quand Vitest est installé ; d'ici là, la revue. La limite de 300 lignes est indicative.
+8. **Vitest.** À installer avec `/test-setup` (version épinglée 5.0.5, `VERSION.md`) avant la story 008. Dépendance de développement approuvée par Maxence.
+9. **Bus et RNG.** Créés par duel et injectés, jamais globaux. Les types d'événements vivent dans `core/`.
 
 ## Related
 

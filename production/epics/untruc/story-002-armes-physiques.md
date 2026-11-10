@@ -78,5 +78,5 @@
 
 ## Dependencies
 
-- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`
+- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-008-stats-combattant.md`, `production/epics/untruc/story-009-rythme-reactions-combat.md`
 - Unlocks: `production/epics/untruc/story-004-competences-lisibles.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`

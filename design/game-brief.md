@@ -1,7 +1,7 @@
 # Game Brief: UnTruc
 
 ## In your words
-- un auto-battler au tour par tour dans l'esprit de La Brute, en 2D, sur le web
+- un auto-battler dans l'esprit de La Brute, en 2D, sur le web
 - Concepts choisis : « les 3 » (élève ton combattant, ligue de combattants, arène de tournoi)
 - le poids des coups/armes
 - des moments drôles et la variété
@@ -14,10 +14,14 @@
 - Aussi le fait que les stats soient intéressantes à mettre en place [...] on n'avait encore rien vu pour les stats. Du coup, je pense qu'on le fera après
 - After play (story 001) : en termes de rapidité du combat, de fluidité du combat, c'est moins intéressant. C'est-à-dire que là, il y en a un qui se rapproche, qui attaque, c'est tout ce qui se passe. Moi, je veux des esquives, du fait que ça parte un peu dans tous les sens, que ça... Il y a des contre-attaques, des attaques, etc. [...] les bonhommes, ils ont un peu changé, notamment sa tête.
 - Élargir du coup avec les stats avant comme nouvelle story aussi
+- Stats (2026-11-10) : pv, puissance magique, puissance physique, endurance (énergie), agilité, poids, intelligence (permet d'améliorer l'utilisation d'une compétence, par exemple un point d'intelligence permet de jeter l'arme quand la vie de l'adversaire a moins de 50 %). Un truc genre mana, pour tout ce qui est utilisation de compétences magiques. Vitesse, je pense on l'enlève, agilité peut faire le taf.
+- Il y aura le système de niveau, qu'il ne faudra pas oublier, avec notamment de la prise d'expérience et après des choix entre différentes compétences, armes, capacités ou stats qu'on pourra après remettre sur le personnage. Bien sûr, il aura un nombre limité.
+- J'ai jamais dit que je voulais du tour par tour. Dans le prototype 5, c'était pas un tour par tour. C'était directement n'importe qui pouvait enchaîner.
+- Story 9, on peut rajouter de la vitesse (2026-11-10 : la stat vitesse revient, elle raccourcit le délai entre deux actions).
 
 **Pitch:** Élève un combattant, équipe-le, puis regarde la physique le faire se battre en tournoi : chaque coup pèse, aucun duel ne se ressemble. *(guessed)*
 
-**Genre:** auto-battler au tour par tour, 2D, ragdoll physique
+**Genre:** auto-battler en temps réel (pas de tour par tour), 2D, ragdoll physique
 
 **Controls:** souris ou toucher pour préparer le combattant ; aucun contrôle pendant le duel. *(guessed)*
 
@@ -45,13 +49,14 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 - Gagner la finale du tournoi. Le tournoi s'arrête sur la première défaite ; le combattant et son équipement restent pour réessayer. *(guessed)*
 
 ## Features
-- [ ] Moteur de duel ragdoll (muscles PD, tour par tour) propre, rejouable à seed fixe ; stats du combattant ; duel rapide qui part dans tous les sens : esquive, parade, contre-attaque, enchaînements, pilotés par les stats
+- [ ] Moteur de duel ragdoll (muscles PD, chaque combattant agit à son propre rythme, sans tour par tour) propre, rejouable à seed fixe ; stats du combattant ; duel rapide qui part dans tous les sens : esquive, parade, contre-attaque, enchaînements, pilotés par les stats
 - [ ] Armes physiques en données : prise à une ou deux mains, attaque propre à chaque arme
 - [ ] Compétences lisibles : ciblage visible, raison affichée quand un coup est bloqué ou raté
 - [ ] Écran de gestion du personnage : armes et compétences lisibles en petites icônes, cosmétiques ; forme choisie parmi plusieurs prototypes
 - [ ] Compétence Transformation : le combattant devient loup-garou (griffes, queue physique)
 - [ ] Tournoi solo : enchaînement d'adversaires, récompenses entre les duels
 - [ ] Effets d'impact (étincelles, ralentis, onde de choc, boule de feu) et look des combattants de la piste 5 (yeux expressifs, tête)
+- [ ] Système de niveaux : expérience gagnée en duel, puis choix limité entre compétences, armes, capacités ou stats
 
 ## Keep
 -
@@ -71,7 +76,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 1. Duel de bout en bout dans `src/` : moteur ragdoll, deux armes, effets d'impact, sans compétences. Puis les stats du combattant, puis le rythme et les réactions (esquive, parade, contre-attaque, enchaînements).
 2. Compétences lisibles (saut ciblé, retour visuel sur coup bloqué) : le point le moins prouvé du prototype. Puis la compétence Transformation (loup-garou).
 3. Prototypes de l'écran de gestion du personnage (plusieurs variantes, Maxence choisit), puis l'écran lui-même.
-4. Tournoi solo.
+4. Système de niveaux, puis tournoi solo.
 
 ---
 **Kill condition:** si après deux passes les compétences restent incompréhensibles sans explication. *(guessed)*

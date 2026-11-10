@@ -77,5 +77,5 @@
 
 ## Dependencies
 
-- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`
+- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`, `production/epics/untruc/story-011-systeme-niveaux.md` (la récompense entre les duels)
 - Unlocks: None

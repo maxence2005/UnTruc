@@ -4,7 +4,7 @@ Projet **perso**. Règle de base : rien en rapport avec iAdvize (aucun outil, co
 
 ## Où on en est (2026-11-09)
 
-Le jeu : `jeu.untruc.fr`, un auto-battler au tour par tour dans l'esprit de La Brute, en 2D, sur le web.
+Le jeu : `jeu.untruc.fr`, un auto-battler dans l'esprit de La Brute, en 2D, sur le web. Pas de tour par tour : chaque combattant agit à son propre rythme, comme dans la piste 5.
 
 - **Stack retenue** : Vite + TypeScript + Phaser 4, physique Matter.js (intégrée à Phaser). Pas de MCP.
 - **Prototype** : `prototypes/combat-animation-concept/` (lire son `README.md`). Cinq pistes testées. Vidéos dans `evidence/`.

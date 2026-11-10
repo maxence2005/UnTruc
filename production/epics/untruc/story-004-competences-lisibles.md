@@ -76,5 +76,5 @@
 
 ## Dependencies
 
-- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-002-armes-physiques.md`, `production/epics/untruc/story-003-effets-impact.md`
+- Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-002-armes-physiques.md`, `production/epics/untruc/story-003-effets-impact.md`, `production/epics/untruc/story-008-stats-combattant.md` (mana, puissance magique, intelligence)
 - Unlocks: `production/epics/untruc/story-005-competence-transformation.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`
