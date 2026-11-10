@@ -35,15 +35,40 @@ export interface ArenaConfig {
   spawnJitter: number;
 }
 
-/** Rythme des tours, en millisecondes. */
-export interface TurnConfig {
+/**
+ * Rythme des actions, en millisecondes. Chaque combattant a son propre délai
+ * avant d'attaquer ; il ne s'écoule que hors attaque et hors étourdissement.
+ */
+export interface ActionConfig {
+  /** Délai avant le premier coup du combattant d'index 0. */
   firstDelayMs: number;
-  gapMs: number;
-  approachTimeoutMs: number;
+  /** Décalage ajouté au premier délai par index de combattant (évite deux coups strictement synchrones). */
+  firstDelayStaggerMs: number;
+  /** Délai minimal entre la fin d'un coup (touché ou non) et le suivant. */
+  delayBaseMs: number;
+  /** Part aléatoire (seedée) ajoutée au délai de base : tirée dans [0, delayRandomMs). */
+  delayRandomMs: number;
+}
+
+/**
+ * Dégâts d'un coup : dégât de base de l'attaque multiplié par
+ * (vitesse de l'impact / `referenceSpeed`), borné entre `minFactor` et `maxFactor`.
+ */
+export interface DamageConfig {
+  /** Vitesse relative d'impact (px par pas) qui donne exactement le dégât de base. */
+  referenceSpeed: number;
+  minFactor: number;
+  maxFactor: number;
 }
 
 /** Configuration générale d'un duel. */
 export interface DuelConfig {
+  /**
+   * Pas de simulation par seconde. Les durées en ms s'y adaptent (`msToTicks`),
+   * mais les réglages des muscles et du maintien (`kd`, `supportBlend`,
+   * `walkBlend`, vitesses en px par pas) sont exprimés par pas : changer cette
+   * valeur oblige à les régler de nouveau.
+   */
   stepHz: number;
   /** Plafond du temps réel pris en compte par image (onglet caché, ralentissement). */
   maxFrameMs: number;
@@ -53,7 +78,8 @@ export interface DuelConfig {
   minHitSpeed: number;
   seedDefault: number;
   arena: ArenaConfig;
-  turn: TurnConfig;
+  action: ActionConfig;
+  damage: DamageConfig;
   physics: PhysicsTuning;
 }
 

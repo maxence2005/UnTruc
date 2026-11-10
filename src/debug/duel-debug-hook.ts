@@ -1,6 +1,9 @@
 import type { Duel } from '../core/duel';
 import type { DuelWorld } from '../core/duel-world';
+import { FIGHTER_TRANSITIONS, type FighterState } from '../core/fighter-state';
 import { hashNumbers } from '../core/state-hash';
+
+const FIGHTER_STATES = Object.keys(FIGHTER_TRANSITIONS) as FighterState[];
 
 /** Instantané du duel exposé sur `window.__untrucDuel`. */
 export interface DuelDebugInfo {
@@ -29,11 +32,17 @@ declare global {
  */
 export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld): void {
   Object.defineProperty(window, '__untrucDuel', {
-    configurable: false,
+    // Redéfinissable : une scène relancée réinstalle le hook sur son nouveau duel.
+    configurable: true,
     enumerable: true,
     get: (): DuelDebugInfo => {
       const [first, second] = duel.fighters;
-      const stateCodes = duel.fighters.map((fighter) => fighter.state.length + fighter.machine.ticksInState * 16);
+      const stateCodes = duel.fighters.flatMap((fighter) => [
+        FIGHTER_STATES.indexOf(fighter.state),
+        fighter.machine.ticksInState,
+        fighter.actionTicksLeft,
+        fighter.hasHit ? 1 : 0,
+      ]);
       return Object.freeze({
         seed,
         tick: duel.tick,

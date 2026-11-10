@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { DUEL_CONFIG } from './content/duel-config';
 import { FIGHTERS } from './content/fighters';
+import { PRESENTATION } from './content/presentation';
 import { DuelScene } from './scenes/duel-scene';
 
 /** Seed demandé dans l'URL (`?seed=123`), sinon celui de la config. */
@@ -19,5 +20,5 @@ new Phaser.Game({
   height: arena.height,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'matter', matter: { autoUpdate: false, enableSleeping: false } },
-  scene: new DuelScene({ seed: readSeed(), config: DUEL_CONFIG, fighters: FIGHTERS }),
+  scene: new DuelScene({ seed: readSeed(), config: DUEL_CONFIG, fighters: FIGHTERS, presentation: PRESENTATION }),
 });

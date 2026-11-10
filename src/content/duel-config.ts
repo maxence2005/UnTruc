@@ -1,6 +1,6 @@
 import type { DuelConfig } from '../core/duel-config';
 
-/** Réglages du duel : pas fixe, arène, rythme des tours, physique. Voir README.md. */
+/** Réglages du duel : pas fixe, arène, rythme des actions, dégâts, physique. Voir README.md. */
 export const DUEL_CONFIG: DuelConfig = {
   stepHz: 60,
   maxFrameMs: 100,
@@ -15,10 +15,16 @@ export const DUEL_CONFIG: DuelConfig = {
     spawnHalfGap: 220,
     spawnJitter: 30,
   },
-  turn: {
-    firstDelayMs: 1000,
-    gapMs: 500,
-    approachTimeoutMs: 4000,
+  action: {
+    firstDelayMs: 600,
+    firstDelayStaggerMs: 300,
+    delayBaseMs: 400,
+    delayRandomMs: 300,
+  },
+  damage: {
+    referenceSpeed: 8,
+    minFactor: 0.5,
+    maxFactor: 1.5,
   },
   physics: {
     gravityY: 1,

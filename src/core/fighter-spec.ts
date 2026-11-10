@@ -81,8 +81,8 @@ export interface AttackSpec {
   lungeSpeed: number;
   /** Multiplicateur de force des bras pendant la frappe. */
   strikeArmBoost: number;
-  damageMin: number;
-  damageMax: number;
+  /** Dégât de base d'un coup, avant le facteur de vitesse d'impact (`DamageConfig`). */
+  damage: number;
   strikingParts: readonly BodyPartName[];
 }
 

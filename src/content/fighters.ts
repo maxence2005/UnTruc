@@ -47,7 +47,7 @@ const SLUMP: Pose = {
 
 const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
   maxHp: 100,
-  stunMs: 700,
+  stunMs: 280,
   body: {
     torsoWidth: 30,
     torsoHeight: 58,
@@ -90,8 +90,7 @@ const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
     strikePose: PUNCH_STRIKE,
     lungeSpeed: 2.5,
     strikeArmBoost: 2,
-    damageMin: 8,
-    damageMax: 14,
+    damage: 11,
     strikingParts: ['foreArmFront'],
   },
   stateTuning: {

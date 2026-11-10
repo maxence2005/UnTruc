@@ -8,3 +8,6 @@ CLAUDE.local.md
 .claude/settings.local.json
 production/session-state/
 production/session-logs/
+
+# Playwright MCP session output
+.playwright-mcp/

@@ -1,12 +1,12 @@
 import * as Phaser from 'phaser';
 import type { Duel } from '../core/duel';
 import type { ArenaConfig } from '../core/duel-config';
-import { PRESENTATION } from '../content/presentation';
+import type { HudPresentation } from '../core/presentation-config';
 
 const HUD_DEPTH = 100;
 
 /**
- * Barres de PV, noms et annonce du vainqueur. Lit le duel (PV, événements),
+ * Barres de PV, noms et annonce du résultat (vainqueur ou égalité). Lit le duel (PV, événements),
  * ne le modifie jamais.
  */
 export class DuelHud {
@@ -16,8 +16,8 @@ export class DuelHud {
     private readonly scene: Phaser.Scene,
     private readonly duel: Duel,
     private readonly arena: ArenaConfig,
+    private readonly hud: HudPresentation,
   ) {
-    const { hud } = PRESENTATION;
     this.bars = scene.add.graphics().setDepth(HUD_DEPTH);
     duel.fighters.forEach((fighter, index) => {
       const x = this.barX(index);
@@ -27,12 +27,15 @@ export class DuelHud {
         .setOrigin(align, 1)
         .setDepth(HUD_DEPTH);
     });
-    duel.events.on('duelEnd', ({ winner }) => this.showWinner(duel.fighters[winner].spec.name));
+    duel.events.on('duelEnd', ({ winner }) => {
+      const { hud } = this;
+      this.showResult(winner === null ? hud.drawText : hud.winnerText.replace('{name}', duel.fighters[winner].spec.name));
+    });
   }
 
   /** Redessine les barres d'après les PV courants. */
   update(): void {
-    const { hud } = PRESENTATION;
+    const { hud } = this;
     this.bars.clear();
     this.duel.fighters.forEach((fighter, index) => {
       const x = this.barX(index);
@@ -48,14 +51,14 @@ export class DuelHud {
   }
 
   private barX(index: number): number {
-    const { hud } = PRESENTATION;
+    const { hud } = this;
     return index === 0 ? hud.margin : this.arena.width - hud.margin - hud.barWidth;
   }
 
-  private showWinner(name: string): void {
-    const { hud } = PRESENTATION;
+  private showResult(message: string): void {
+    const { hud } = this;
     this.scene.add
-      .text(this.arena.width / 2, hud.winnerY, hud.winnerText.replace('{name}', name), {
+      .text(this.arena.width / 2, hud.winnerY, message, {
         font: hud.winnerFont,
         color: hud.textColor,
       })

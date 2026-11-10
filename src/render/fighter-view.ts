@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { BODY_PART_NAMES, type BodyPartName, type DuelWorld } from '../core/duel-world';
 import type { Facing } from '../core/fighter';
 import type { BodySpec, FighterColors } from '../core/fighter-spec';
-import { PRESENTATION } from '../content/presentation';
+import type { PresentationConfig } from '../core/presentation-config';
 
 interface PartLook {
   kind: 'rect' | 'circle';
@@ -48,6 +48,7 @@ export class FighterView {
     body: BodySpec,
     colors: FighterColors,
     facing: Facing,
+    presentation: PresentationConfig,
   ) {
     const looks = partLooks(body, colors);
     for (const part of BODY_PART_NAMES) {
@@ -58,9 +59,9 @@ export class FighterView {
         shape.fillCircle(0, 0, look.radius);
         shape.fillStyle(colors.eye, 1);
         shape.fillCircle(
-          facing * look.radius * PRESENTATION.eyeOffsetRatio,
-          -look.radius * PRESENTATION.eyeOffsetRatio * 0.5,
-          look.radius * PRESENTATION.eyeRadiusRatio,
+          facing * look.radius * presentation.eyeOffsetRatio,
+          -look.radius * presentation.eyeOffsetRatio * 0.5,
+          look.radius * presentation.eyeRadiusRatio,
         );
       } else {
         shape.fillRoundedRect(-look.width / 2, -look.height / 2, look.width, look.height, look.radius);

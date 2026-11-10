@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { Duel } from '../core/duel';
 import type { DuelConfig } from '../core/duel-config';
 import type { FighterSpec } from '../core/fighter-spec';
+import type { PresentationConfig } from '../core/presentation-config';
 import { createRng } from '../core/rng';
 import { installDuelDebugHook } from '../debug/duel-debug-hook';
 import { MatterDuelWorld } from '../physics/matter-duel-world';
@@ -14,6 +15,7 @@ export interface DuelSceneSetup {
   seed: number;
   config: DuelConfig;
   fighters: readonly [FighterSpec, FighterSpec];
+  presentation: PresentationConfig;
 }
 
 /**
@@ -31,8 +33,10 @@ export class DuelScene extends Phaser.Scene {
     super('duel');
   }
 
+  /** Construit le duel, la physique, les vues et le HUD ; rappelé à chaque (re)lancement de la scène. */
   create(): void {
-    const { seed, config, fighters } = this.setup;
+    const { seed, config, fighters, presentation } = this.setup;
+    this.accumulatorMs = 0;
     this.duel = new Duel(config, fighters, createRng(seed));
     this.world = new MatterDuelWorld(
       this.matter,
@@ -41,11 +45,11 @@ export class DuelScene extends Phaser.Scene {
       this.duel.fighters.map((fighter) => fighter.facing),
       this.duel.spawnX,
     );
-    drawArena(this, config.arena);
+    drawArena(this, config.arena, presentation);
     this.views = this.duel.fighters.map(
-      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, fighter.facing),
+      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, fighter.facing, presentation),
     );
-    this.hud = new DuelHud(this, this.duel, config.arena);
+    this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
     installDuelDebugHook(seed, this.duel, this.world);
   }
 

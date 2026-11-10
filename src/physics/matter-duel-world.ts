@@ -26,6 +26,8 @@ export class MatterDuelWorld implements DuelWorld {
   private readonly ragdolls: Ragdoll[];
   private readonly owners = new Map<number, BodyOwner>();
   private contacts: ContactReport[] = [];
+  /** Vitesse de chaque corps juste avant le pas en cours, par id de corps (voir `collectContacts`). */
+  private readonly preStepVelocity = new Map<number, { x: number; y: number }>();
   private readonly groundY: number;
   private readonly stepMs: number;
 
@@ -49,10 +51,15 @@ export class MatterDuelWorld implements DuelWorld {
       buildRagdoll(matter, spec.body, spawnX[index], this.groundY, facings[index], physics.jointStiffness),
     );
     this.ragdolls.forEach((ragdoll, fighter) => {
-      for (const part of BODY_PART_NAMES) this.owners.set(ragdoll.parts[part].id, { fighter, part });
+      for (const part of BODY_PART_NAMES) {
+        const { id } = ragdoll.parts[part];
+        this.owners.set(id, { fighter, part });
+        this.preStepVelocity.set(id, { x: 0, y: 0 });
+      }
     });
-    world.on('collisionstart', this.collectContacts);
-    world.on('collisionactive', this.collectContacts);
+    // Pas de désabonnement à écrire : `World.shutdown()` de Phaser retire tous les écouteurs à l'arrêt de la scène.
+    world.on('collisionstart', (event: CollisionEvent) => this.collectContacts(event, false));
+    world.on('collisionactive', (event: CollisionEvent) => this.collectContacts(event, true));
   }
 
   drive(fighter: number, intent: FighterIntent): void {
@@ -61,6 +68,14 @@ export class MatterDuelWorld implements DuelWorld {
   }
 
   step(): void {
+    for (const ragdoll of this.ragdolls) {
+      for (const part of BODY_PART_NAMES) {
+        const body = ragdoll.parts[part];
+        const stored = this.preStepVelocity.get(body.id)!;
+        stored.x = body.velocity.x;
+        stored.y = body.velocity.y;
+      }
+    }
     this.matter.world.step(this.stepMs);
   }
 
@@ -99,11 +114,19 @@ export class MatterDuelWorld implements DuelWorld {
     add.rectangle(arena.width + arena.wallThickness / 2, 0, arena.wallThickness, arena.height * 2, solid);
   }
 
-  private readonly collectContacts = (event: CollisionEvent): void => {
-    for (const { bodyA, bodyB } of event.pairs) {
-      const ownerA = this.owners.get(bodyA.id);
-      const ownerB = this.owners.get(bodyB.id);
+  /**
+   * Relève les contacts entre combattants avec leur vitesse d'approche. Matter
+   * émet `collisionstart` avant de résoudre la collision (la vitesse des corps
+   * est encore celle de l'impact) mais `collisionactive` après (vitesse déjà
+   * amortie) : pour un contact qui dure, on prend la vitesse d'avant le pas.
+   */
+  private collectContacts(event: CollisionEvent, afterResolution: boolean): void {
+    for (const pair of event.pairs) {
+      const ownerA = this.owners.get(pair.bodyA.id);
+      const ownerB = this.owners.get(pair.bodyB.id);
       if (!ownerA || !ownerB || ownerA.fighter === ownerB.fighter) continue;
+      const bodyA = afterResolution ? { velocity: this.preStepVelocity.get(pair.bodyA.id)! } : pair.bodyA;
+      const bodyB = afterResolution ? { velocity: this.preStepVelocity.get(pair.bodyB.id)! } : pair.bodyB;
       this.contacts.push({
         fighterA: ownerA.fighter,
         partA: ownerA.part,
@@ -112,5 +135,5 @@ export class MatterDuelWorld implements DuelWorld {
         relativeSpeed: Math.hypot(bodyA.velocity.x - bodyB.velocity.x, bodyA.velocity.y - bodyB.velocity.y),
       });
     }
-  };
+  }
 }

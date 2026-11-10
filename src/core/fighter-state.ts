@@ -6,11 +6,11 @@ export type FighterState = 'idle' | 'approach' | 'attack' | 'recovery' | 'stunne
  * Toute autre transition est une erreur de programmation.
  */
 export const FIGHTER_TRANSITIONS: Readonly<Record<FighterState, readonly FighterState[]>> = {
-  idle: ['approach', 'stunned', 'ko'],
-  approach: ['attack', 'stunned', 'ko'],
+  idle: ['approach', 'attack', 'stunned', 'ko'],
+  approach: ['idle', 'attack', 'stunned', 'ko'],
   attack: ['recovery', 'stunned', 'ko'],
   recovery: ['idle', 'stunned', 'ko'],
-  stunned: ['idle', 'ko'],
+  stunned: ['idle', 'stunned', 'ko'],
   ko: [],
 };
 

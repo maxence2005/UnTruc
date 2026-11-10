@@ -14,6 +14,7 @@ export const BODY_PART_NAMES = [
   'shinBack',
 ] as const;
 
+/** Nom d'une partie du corps. */
 export type BodyPartName = (typeof BODY_PART_NAMES)[number];
 
 /** Position et angle monde d'une partie du corps (lecture seule). */

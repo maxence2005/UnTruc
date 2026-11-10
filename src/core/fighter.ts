@@ -12,10 +12,14 @@ export type Facing = 1 | -1;
  * (pose cible, force) que la logique envoie à la physique à chaque tick.
  */
 export class Fighter {
+  /** Machine à états du combattant. */
   readonly machine = new FighterStateMachine();
+  /** Points de vie restants ; 0 = KO. */
   hp: number;
   /** Vrai une fois que l'attaque en cours a touché (un seul coup par attaque). */
   hasHit = false;
+  /** Ticks restants avant la prochaine attaque ; ne baisse qu'à l'arrêt ou en approche. */
+  actionTicksLeft = 0;
   readonly windupTicks: number;
   readonly strikeTicks: number;
   readonly recoveryTicks: number;
@@ -36,6 +40,7 @@ export class Fighter {
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
   }
 
+  /** État courant (raccourci vers la machine à états). */
   get state(): FighterState {
     return this.machine.state;
   }
