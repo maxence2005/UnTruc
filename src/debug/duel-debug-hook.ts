@@ -42,6 +42,9 @@ export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld)
         fighter.machine.ticksInState,
         fighter.actionTicksLeft,
         fighter.hasHit ? 1 : 0,
+        fighter.stunTicks,
+        fighter.stamina,
+        fighter.mana,
       ]);
       return Object.freeze({
         seed,

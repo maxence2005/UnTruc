@@ -46,7 +46,17 @@ const SLUMP: Pose = {
 };
 
 const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
-  maxHp: 100,
+  stats: {
+    hp: 100,
+    physicalPower: 10,
+    magicPower: 10,
+    stamina: 100,
+    mana: 50,
+    agility: 10,
+    speed: 10,
+    weight: 70,
+    intelligence: 0,
+  },
   stunMs: 280,
   body: {
     torsoWidth: 30,

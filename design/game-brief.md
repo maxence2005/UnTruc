@@ -57,6 +57,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 - [ ] Tournoi solo : enchaînement d'adversaires, récompenses entre les duels
 - [ ] Effets d'impact (étincelles, ralentis, onde de choc, boule de feu) et look des combattants de la piste 5 (yeux expressifs, tête)
 - [ ] Système de niveaux : expérience gagnée en duel, puis choix limité entre compétences, armes, capacités ou stats
+- [ ] Choix du personnage au début : plusieurs personnages, chacun avec ses stats de départ, spécialisé sur une stat ou équilibré
 
 ## Keep
 -
@@ -76,7 +77,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 1. Duel de bout en bout dans `src/` : moteur ragdoll, deux armes, effets d'impact, sans compétences. Puis les stats du combattant, puis le rythme et les réactions (esquive, parade, contre-attaque, enchaînements).
 2. Compétences lisibles (saut ciblé, retour visuel sur coup bloqué) : le point le moins prouvé du prototype. Puis la compétence Transformation (loup-garou).
 3. Prototypes de l'écran de gestion du personnage (plusieurs variantes, Maxence choisit), puis l'écran lui-même.
-4. Système de niveaux, puis tournoi solo.
+4. Choix du personnage au début, système de niveaux, puis tournoi solo.
 
 ---
 **Kill condition:** si après deux passes les compétences restent incompréhensibles sans explication. *(guessed)*

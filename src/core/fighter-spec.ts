@@ -1,6 +1,7 @@
 import type { BodyPartName } from './duel-world';
 import type { FighterState } from './fighter-state';
 import type { Pose } from './pose';
+import type { FighterStats } from './stats';
 
 /**
  * Dimensions et matière du corps, en pixels. Les longueurs de membres vont
@@ -105,13 +106,14 @@ export interface FighterSpec {
   id: string;
   name: string;
   colors: FighterColors;
-  maxHp: number;
+  stats: FighterStats;
   body: BodySpec;
   muscles: MuscleSpec;
   stance: Pose;
   slump: Pose;
   walk: WalkSpec;
   attack: AttackSpec;
+  /** Étourdissement de base d'un coup d'impact de référence sur un poids de référence, avant bornes (voir `StatsConfig`). */
   stunMs: number;
   stateTuning: Readonly<Record<FighterState, StateTuning>>;
 }

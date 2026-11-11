@@ -1,12 +1,12 @@
 # Story 008: Stats du combattant
 
 > **Epic**: UnTruc (MVP)
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: N/A (minimal)
 > **Type**: Logic
 > **Estimate**: L
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: [set by /dev-story when implementation begins]
+> **Last Updated**: 2026-11-11
 
 ## Context
 
@@ -64,13 +64,20 @@
 
 ## Files
 
-- src/core/ (types des stats, formules, état du combattant)
-- src/content/fighters.ts (valeurs des stats)
-- src/content/duel-config.ts (coefficients des formules)
-- src/physics/ (masse du corps selon le poids)
-- tests/unit/stats.test.ts (optional at qa.level minimal)
-
----
+- src/content/duel-config.ts
+- src/content/fighters.ts
+- src/content/README.md
+- src/core/duel-config.ts
+- src/core/duel.ts
+- src/core/fighter-spec.ts
+- src/core/fighter.ts
+- src/core/stats.ts
+- src/debug/duel-debug-hook.ts
+- src/physics/matter-duel-world.ts
+- src/physics/ragdoll.ts
+- src/ui/duel-hud.ts
+- tests/unit/duel/duel.test.ts
+- tests/unit/stats.test.ts
 
 ## QA Test Cases
 
@@ -80,12 +87,12 @@
 
 ## Test Evidence
 
-*At `qa.level: minimal` tests are waived (advisory).*
+*At `qa.level: standard` (depuis le 2026-11-11) un test unitaire est requis pour une story Logic.*
 
 **Story Type**: Logic
-**Required evidence**: waived at qa.level minimal; `tests/unit/stats.test.ts` recommended.
+**Required evidence**: `tests/unit/stats.test.ts` (Vitest, `npm test`).
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created — `tests/unit/stats.test.ts`
 
 ---
 
@@ -93,3 +100,18 @@
 
 - Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`
 - Unlocks: `production/epics/untruc/story-009-rythme-reactions-combat.md`, `production/epics/untruc/story-002-armes-physiques.md`, `production/epics/untruc/story-004-competences-lisibles.md`
+
+---
+
+## Completion Notes
+**Completed**: 2026-11-11
+**Criteria**: 10/10 passing (none deferred)
+**Deviations**: None
+**Test Evidence**: `tests/unit/stats.test.ts` (15 tests), `tests/unit/duel/duel.test.ts` (6 tests) ; captures dans `production/qa/evidence/story-008-stats-combattant/`
+**Reviewed by**: `/code-review` run in this session (APPROVED WITH SUGGESTIONS, suggestions applied) ; engine review by lead-programmer
+
+## Calls beyond the design
+- Stats de départ provisoires : 100 PV, puissance physique 10, puissance magique 10, endurance 100, mana 50, agilité 10, vitesse 10, poids 70, intelligence 0 (`src/content/fighters.ts`) ; les vraies valeurs viendront du choix du personnage (story 012) · kept 2026-11-11
+- Références 10 (puissance physique) et 70 (poids) qui redonnent les dégâts et la masse d'avant (`src/content/duel-config.ts`) · kept 2026-11-11
+- Masse du corps bornée entre 0,5 et 3 fois la normale (`src/content/duel-config.ts`) · kept 2026-11-11
+- Étourdissement de 100 à 600 ms, selon la force du coup et le poids de la victime, sans hasard (`src/core/stats.ts`, `src/content/duel-config.ts`) · kept 2026-11-11

@@ -4,6 +4,7 @@ import type { BodyPartName, ContactReport, DuelWorld, FighterIntent, PartTransfo
 import { BODY_PART_NAMES } from '../core/duel-world';
 import type { Facing } from '../core/fighter';
 import type { FighterSpec } from '../core/fighter-spec';
+import { massScale } from '../core/stats';
 import { applyIntent } from './muscles';
 import { buildRagdoll, type Ragdoll } from './ragdoll';
 
@@ -48,7 +49,7 @@ export class MatterDuelWorld implements DuelWorld {
     world.engine.constraintIterations = physics.constraintIterations;
     this.buildArena();
     this.ragdolls = specs.map((spec, index) =>
-      buildRagdoll(matter, spec.body, spawnX[index], this.groundY, facings[index], physics.jointStiffness),
+      buildRagdoll(matter, spec.body, spawnX[index], this.groundY, facings[index], physics.jointStiffness, massScale(config, spec.stats)),
     );
     this.ragdolls.forEach((ragdoll, fighter) => {
       for (const part of BODY_PART_NAMES) {

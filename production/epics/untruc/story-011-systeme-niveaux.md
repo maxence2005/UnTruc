@@ -83,5 +83,5 @@
 
 ## Dependencies
 
-- Depends on: `production/epics/untruc/story-008-stats-combattant.md`, `production/epics/untruc/story-002-armes-physiques.md`, `production/epics/untruc/story-004-competences-lisibles.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`
+- Depends on: `production/epics/untruc/story-008-stats-combattant.md`, `production/epics/untruc/story-002-armes-physiques.md`, `production/epics/untruc/story-004-competences-lisibles.md`, `production/epics/untruc/story-006-ecran-gestion-personnage.md`, `production/epics/untruc/story-012-choix-personnage.md`
 - Unlocks: `production/epics/untruc/story-007-tournoi-solo.md`

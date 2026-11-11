@@ -23,7 +23,12 @@ export class Fighter {
   readonly windupTicks: number;
   readonly strikeTicks: number;
   readonly recoveryTicks: number;
-  readonly stunTicks: number;
+  /** Durée de l'étourdissement en cours, calculée à chaque coup reçu (`stunTicksFor`). */
+  stunTicks = 0;
+  /** Endurance restante (voir `spendStamina`). */
+  stamina: number;
+  /** Mana restant (voir `spendMana`). */
+  mana: number;
   private readonly walkCycleTicks: number;
 
   constructor(
@@ -32,12 +37,23 @@ export class Fighter {
     readonly facing: Facing,
     stepHz: number,
   ) {
-    this.hp = spec.maxHp;
+    this.hp = spec.stats.hp;
+    this.stamina = spec.stats.stamina;
+    this.mana = spec.stats.mana;
     this.windupTicks = msToTicks(spec.attack.windupMs, stepHz);
     this.strikeTicks = msToTicks(spec.attack.strikeMs, stepHz);
     this.recoveryTicks = msToTicks(spec.attack.recoveryMs, stepHz);
-    this.stunTicks = msToTicks(spec.stunMs, stepHz);
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
+  }
+
+  /** Dépense de l'endurance ; ne descend pas sous 0. */
+  spendStamina(amount: number): void {
+    this.stamina = Math.max(0, this.stamina - amount);
+  }
+
+  /** Dépense du mana ; ne descend pas sous 0. */
+  spendMana(amount: number): void {
+    this.mana = Math.max(0, this.mana - amount);
   }
 
   /** État courant (raccourci vers la machine à états). */

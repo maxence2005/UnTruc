@@ -1,10 +1,11 @@
 import type { DuelConfig } from './duel-config';
-import { msToTicks } from './duel-config';
+import { assertDuelConfig, msToTicks } from './duel-config';
 import type { BodyPartName, ContactReport, DuelWorld } from './duel-world';
 import { EventBus } from './events';
 import { Fighter } from './fighter';
 import type { FighterSpec } from './fighter-spec';
 import type { Rng } from './rng';
+import { hitDamage, stunTicksFor } from './stats';
 
 /** Phase globale du duel : en cours, KO prononcé (la physique finit de tomber), figé. */
 export type DuelPhase = 'running' | 'ending' | 'over';
@@ -45,6 +46,7 @@ export class Duel {
     specs: readonly [FighterSpec, FighterSpec],
     private readonly rng: Rng,
   ) {
+    assertDuelConfig(config);
     const { arena, stepHz, action } = config;
     this.fighters = [new Fighter(0, specs[0], 1, stepHz), new Fighter(1, specs[1], -1, stepHz)];
     const centerX = arena.width / 2;
@@ -106,15 +108,8 @@ export class Duel {
     return null;
   }
 
-  /** Dégât de base de l'attaque × (vitesse d'impact / vitesse de référence) borné, arrondi à l'entier. */
-  private damageFor(attacker: Fighter, impactSpeed: number): number {
-    const { referenceSpeed, minFactor, maxFactor } = this.config.damage;
-    const factor = Math.min(maxFactor, Math.max(minFactor, impactSpeed / referenceSpeed));
-    return Math.round(attacker.spec.attack.damage * factor);
-  }
-
   private applyHit({ attacker, part, impactSpeed }: PendingHit, victim: Fighter): void {
-    const damage = this.damageFor(attacker, impactSpeed);
+    const damage = hitDamage(this.config, attacker.spec.attack.damage, impactSpeed, attacker.spec.stats);
     attacker.hasHit = true;
     victim.hp = Math.max(0, victim.hp - damage);
     this.events.emit('hit', {
@@ -125,7 +120,10 @@ export class Duel {
       damage,
       hpLeft: victim.hp,
     });
-    if (victim.hp > 0) victim.machine.transition('stunned');
+    if (victim.hp > 0) {
+      victim.stunTicks = stunTicksFor(this.config, victim.spec.stunMs, impactSpeed, victim.spec.stats);
+      victim.machine.transition('stunned');
+    }
   }
 
   /** Termine le duel si au moins un combattant est à 0 PV : KO, vainqueur ou égalité. */

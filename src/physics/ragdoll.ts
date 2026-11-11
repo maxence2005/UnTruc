@@ -26,6 +26,8 @@ export interface Ragdoll {
  * Construit un ragdoll debout, de profil, dont les pieds touchent le sol.
  * Les articulations sont des contraintes Matter de longueur nulle entre deux
  * points d'ancrage ; les muscles (voir `muscles.ts`) font le reste.
+ * `massScale` multiplie toutes les densités : c'est le poids du combattant
+ * (voir `massScale` dans `core/stats.ts`).
  */
 export function buildRagdoll(
   matter: Phaser.Physics.Matter.MatterPhysics,
@@ -34,10 +36,11 @@ export function buildRagdoll(
   groundY: number,
   facing: Facing,
   jointStiffness: number,
+  massScale: number,
 ): Ragdoll {
   const group = matter.world.nextGroup(true);
   const material = (density: number) => ({
-    density,
+    density: density * massScale,
     friction: spec.friction,
     frictionAir: spec.frictionAir,
     restitution: spec.restitution,

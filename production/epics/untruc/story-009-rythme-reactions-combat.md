@@ -36,6 +36,8 @@
 - [ ] Chaque action et chaque réaction coûte de l'endurance ; un combattant à sec ne peut plus esquiver ni enchaîner.
 - [ ] Vitesse : elle raccourcit le délai entre deux actions d'un combattant ; un combattant rapide agit visiblement plus souvent qu'un lent. La formule et ses coefficients sont dans la config.
 - [ ] Le duel ne se résume plus à « approche puis coup » : les deux combattants agissent, réagissent et enchaînent sans temps mort marqué.
+- [ ] Projection : chaque coup donne à la victime une impulsion de recul proportionnelle à la force du coup et au rapport entre le poids de l'attaquant et celui de la victime, et le maintien debout se relâche pendant l'étourdissement. Un très lourd envoie visiblement valser un léger ; un léger fait à peine reculer un lourd. Coefficients et bornes dans la config. *(demandé par Maxence le 2026-11-11)*
+- [ ] Contrepartie du poids : un combattant lourd se déplace nettement plus lentement qu'un léger (vitesse de marche réduite selon le poids, formule et bornes dans la config). *(Maxence, 2026-11-11 : « il va se déplacer beaucoup plus lentement »)*
 - [ ] Pas d'hésitation en limite de portée : un combattant ne bascule pas sans cesse entre marche et arrêt quand l'adversaire est juste à la limite (marge entre la distance où il s'arrête et celle où il repart, dans la config).
 - [ ] Pas d'étourdissement sans fin : un combattant frappé en série ne reste pas sonné indéfiniment (durée totale bornée ou courte immunité après un étourdissement, dans la config).
 - [ ] Chaque réaction émet un événement (`dodge`, `parry`, `counter`, `combo`) que le rendu et les effets écoutent ; la logique ne les appelle jamais directement.

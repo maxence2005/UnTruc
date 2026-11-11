@@ -54,7 +54,7 @@ describe('Duel', () => {
 
     expect(duel.winner).toBe(0);
     expect(duel.fighters[1].state).toBe('ko');
-    expect(duel.fighters[0].hp).toBe(FIGHTERS[0].maxHp);
+    expect(duel.fighters[0].hp).toBe(FIGHTERS[0].stats.hp);
   });
 
   it('lets both fighters land a hit on the same step without taking turns', () => {
@@ -95,7 +95,7 @@ describe('Duel', () => {
     for (let tick = 0; tick < 600; tick += 1) duel.update(world);
 
     expect(hits).toHaveLength(0);
-    expect(duel.fighters[1].hp).toBe(FIGHTERS[1].maxHp);
+    expect(duel.fighters[1].hp).toBe(FIGHTERS[1].stats.hp);
   });
 
   it('replays the same hits for the same seed', () => {

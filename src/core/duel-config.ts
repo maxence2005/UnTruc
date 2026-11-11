@@ -61,6 +61,24 @@ export interface DamageConfig {
   maxFactor: number;
 }
 
+/**
+ * Formules des stats : valeurs de référence (qui donnent un facteur de 1) et bornes.
+ * Dégâts × `physicalPower / referencePhysicalPower` ; masse du corps ×
+ * `weight / referenceWeight` ; étourdissement ÷ ce même facteur de poids.
+ */
+export interface StatsConfig {
+  /** Puissance physique qui donne exactement les dégâts de base. */
+  referencePhysicalPower: number;
+  /** Poids qui donne exactement la masse de base du ragdoll. */
+  referenceWeight: number;
+  /** Bornes du facteur de poids (masse du corps et étourdissement). */
+  minMassScale: number;
+  maxMassScale: number;
+  /** Bornes de la durée d'étourdissement d'un coup, en ms. */
+  minStunMs: number;
+  maxStunMs: number;
+}
+
 /** Configuration générale d'un duel. */
 export interface DuelConfig {
   /**
@@ -80,7 +98,25 @@ export interface DuelConfig {
   arena: ArenaConfig;
   action: ActionConfig;
   damage: DamageConfig;
+  stats: StatsConfig;
   physics: PhysicsTuning;
+}
+
+/**
+ * Refuse une config dont un diviseur des formules n'est pas strictement
+ * positif : sans ce contrôle, les dégâts ou la masse deviendraient infinis ou
+ * `NaN` sans erreur. Appelée à la création d'un duel.
+ */
+export function assertDuelConfig(config: DuelConfig): void {
+  const divisors: Record<string, number> = {
+    'damage.referenceSpeed': config.damage.referenceSpeed,
+    'stats.referencePhysicalPower': config.stats.referencePhysicalPower,
+    'stats.referenceWeight': config.stats.referenceWeight,
+    'stats.minMassScale': config.stats.minMassScale,
+  };
+  for (const [name, value] of Object.entries(divisors)) {
+    if (!(value > 0)) throw new Error(`Config du duel invalide : ${name} doit être strictement positif (reçu ${value}).`);
+  }
 }
 
 /** Convertit des millisecondes en nombre de ticks de simulation (au moins 1). */

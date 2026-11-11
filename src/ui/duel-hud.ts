@@ -39,7 +39,7 @@ export class DuelHud {
     this.bars.clear();
     this.duel.fighters.forEach((fighter, index) => {
       const x = this.barX(index);
-      const ratio = fighter.hp / fighter.spec.maxHp;
+      const ratio = fighter.hp / fighter.spec.stats.hp;
       const filled = hud.barWidth * ratio;
       this.bars.fillStyle(hud.barBackColor, 1);
       this.bars.fillRect(x, hud.margin, hud.barWidth, hud.barHeight);

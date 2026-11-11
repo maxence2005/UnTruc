@@ -26,6 +26,14 @@ export const DUEL_CONFIG: DuelConfig = {
     minFactor: 0.5,
     maxFactor: 1.5,
   },
+  stats: {
+    referencePhysicalPower: 10,
+    referenceWeight: 70,
+    minMassScale: 0.5,
+    maxMassScale: 3,
+    minStunMs: 100,
+    maxStunMs: 600,
+  },
   physics: {
     gravityY: 1,
     positionIterations: 8,

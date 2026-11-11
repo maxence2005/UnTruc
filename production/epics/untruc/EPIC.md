@@ -8,7 +8,7 @@ The brief's Features list (7 items). Order follows the brief's Build order:
 1. Duel de bout en bout : moteur (001), stats (008), rythme et réactions (009), look piste 5 (010), puis armes (002) et effets (003).
 2. Compétences lisibles, puis la compétence Transformation.
 3. Prototypes de l'écran de gestion (plusieurs variantes), puis l'écran.
-4. Système de niveaux (011), puis tournoi solo (007).
+4. Choix du personnage (012), système de niveaux (011), puis tournoi solo (007).
 
 Out of scope: see the brief (comptes, serveur, ligue en ligne, son, IA générative, rendu détaillé).
 
@@ -23,7 +23,8 @@ Out of scope: see the brief (comptes, serveur, ligue en ligne, son, IA générat
 | 005 | Compétence Transformation loup-garou | Visual/Feel | Ready | N/A (minimal) |
 | 006 | Écran de gestion du personnage | UI | Ready | N/A (minimal) |
 | 007 | Tournoi solo | Logic | Ready | N/A (minimal) |
-| 008 | Stats du combattant | Logic | Ready | N/A (minimal) |
+| 008 | Stats du combattant | Logic | Complete | N/A (minimal) |
 | 009 | Rythme et réactions de combat | Integration | Ready | N/A (minimal) |
 | 010 | Look des combattants de la piste 5 | Visual/Feel | Ready | N/A (minimal) |
 | 011 | Système de niveaux | Logic | Ready | N/A (minimal) |
+| 012 | Choix du personnage au début | UI | Ready | N/A (minimal) |

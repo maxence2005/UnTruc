@@ -1,0 +1,14 @@
+Reviewed-Content-Hash: src/content/README.md 4da6a919fde4bec8b009150fd1438dba1103716c
+Reviewed-Content-Hash: src/content/duel-config.ts 4423d6fc56abdd0044e76ef29220c42be6c66fca
+Reviewed-Content-Hash: src/content/fighters.ts 24bec222c087b87a7fd970a5197cb4eafc66dbee
+Reviewed-Content-Hash: src/core/duel-config.ts 76f3694f4449f1e123453ef69ec17cb94a5d6c5c
+Reviewed-Content-Hash: src/core/duel.ts c9a68562a5b1ac800816dc039d256d73ab17c4e0
+Reviewed-Content-Hash: src/core/fighter-spec.ts e1654623b22564b9feafbcdfa478402c2f908c1e
+Reviewed-Content-Hash: src/core/fighter.ts ab40f1d2b73272fac4af5061828e6e1640eee610
+Reviewed-Content-Hash: src/debug/duel-debug-hook.ts df296bd56cf24489681530196f0f75578a54ab24
+Reviewed-Content-Hash: src/physics/matter-duel-world.ts 9eeeb70ae4a1b4b48e8737ec9bfc1a0c6260407e
+Reviewed-Content-Hash: src/physics/ragdoll.ts 2fea0ef1a2b322b882508d6e319c6b9d727d87be
+Reviewed-Content-Hash: src/ui/duel-hud.ts 07192940408e036b6200ec10e68b62c6b523ca66
+Reviewed-Content-Hash: tests/unit/duel/duel.test.ts a8023d530ce6c2f734562a64cb71f6d2ac00143b
+Reviewed-Content-Hash: src/core/stats.ts d6a3f6dbed821fd8e2eb5a05642fb3728505c8c4
+Reviewed-Content-Hash: tests/unit/stats.test.ts 025097c4f560466ec71530b0eb59dc30cc3454dc
