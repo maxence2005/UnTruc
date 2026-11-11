@@ -1,15 +1,19 @@
-/** États possibles d'un combattant. */
-export type FighterState = 'idle' | 'approach' | 'attack' | 'recovery' | 'stunned' | 'ko';
+/** États possibles d'un combattant ; `dodge` et `parry` sont les réactions à une attaque adverse (story-009). */
+export type FighterState = 'idle' | 'approach' | 'attack' | 'recovery' | 'dodge' | 'parry' | 'stunned' | 'ko';
 
 /**
  * Table des transitions autorisées : l'unique endroit où elles sont listées.
  * Toute autre transition est une erreur de programmation.
  */
 export const FIGHTER_TRANSITIONS: Readonly<Record<FighterState, readonly FighterState[]>> = {
-  idle: ['approach', 'attack', 'stunned', 'ko'],
-  approach: ['idle', 'attack', 'stunned', 'ko'],
-  attack: ['recovery', 'stunned', 'ko'],
-  recovery: ['idle', 'stunned', 'ko'],
+  idle: ['approach', 'attack', 'dodge', 'parry', 'stunned', 'ko'],
+  approach: ['idle', 'attack', 'dodge', 'parry', 'stunned', 'ko'],
+  // attack -> attack : coup enchaîné, sans passer par la récupération.
+  attack: ['recovery', 'attack', 'stunned', 'ko'],
+  recovery: ['idle', 'dodge', 'parry', 'stunned', 'ko'],
+  // Une esquive ignore les coups : on n'en sort que vers l'arrêt ou la contre-attaque.
+  dodge: ['idle', 'attack'],
+  parry: ['idle', 'attack', 'ko'],
   stunned: ['idle', 'stunned', 'ko'],
   ko: [],
 };

@@ -55,6 +55,8 @@ export interface ContactReport {
 export interface DuelWorld {
   /** Donne ses ordres à un combattant pour le prochain pas. */
   drive(fighter: number, intent: FighterIntent): void;
+  /** Ajoute une vitesse (px par pas) à tout le corps d'un combattant : recul d'un coup reçu. */
+  impulse(fighter: number, velocityX: number, velocityY: number): void;
   /** Avance la physique d'un pas fixe. */
   step(): void;
   /** Position x du bassin d'un combattant. */

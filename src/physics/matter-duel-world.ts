@@ -68,6 +68,14 @@ export class MatterDuelWorld implements DuelWorld {
     applyIntent(this.matter, this.ragdolls[fighter], intent, spec.muscles, spec.body, this.config.physics, this.groundY);
   }
 
+  impulse(fighter: number, velocityX: number, velocityY: number): void {
+    const { parts } = this.ragdolls[fighter];
+    for (const part of BODY_PART_NAMES) {
+      const body = parts[part];
+      this.matter.body.setVelocity(body, { x: body.velocity.x + velocityX, y: body.velocity.y + velocityY });
+    }
+  }
+
   step(): void {
     for (const ragdoll of this.ragdolls) {
       for (const part of BODY_PART_NAMES) {

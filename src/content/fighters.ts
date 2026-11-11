@@ -45,12 +45,36 @@ const SLUMP: Pose = {
   crouch: 20,
 };
 
+const DODGE: Pose = {
+  ...STANCE,
+  lean: -0.5,
+  head: -0.3,
+  shoulderFront: -0.2,
+  shoulderBack: -0.3,
+  hipFront: 0.5,
+  kneeFront: 0.7,
+  kneeBack: 0.7,
+  crouch: 24,
+};
+
+const PARRY: Pose = {
+  ...STANCE,
+  lean: 0.05,
+  head: 0.1,
+  shoulderFront: 1.2,
+  elbowFront: 1.9,
+  shoulderBack: 1,
+  elbowBack: 1.9,
+  crouch: 10,
+};
+
 const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
   stats: {
     hp: 100,
     physicalPower: 10,
     magicPower: 10,
     stamina: 100,
+    recovery: 10,
     mana: 50,
     agility: 10,
     speed: 10,
@@ -90,6 +114,8 @@ const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
   },
   stance: STANCE,
   slump: SLUMP,
+  dodgePose: DODGE,
+  parryPose: PARRY,
   walk: { speed: 2.2, cycleMs: 520, hipSwing: 0.6, kneeBend: 0.8, kneeBendPhase: 1.4 },
   attack: {
     reach: 95,
@@ -108,6 +134,8 @@ const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
     approach: { strength: 1, support: 1 },
     attack: { strength: 1, support: 1 },
     recovery: { strength: 0.9, support: 1 },
+    dodge: { strength: 1, support: 1 },
+    parry: { strength: 1, support: 1 },
     stunned: { strength: 0.25, support: 0.3 },
     ko: { strength: 0, support: 0 },
   },

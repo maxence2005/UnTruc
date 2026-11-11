@@ -1,6 +1,6 @@
 import type { DuelConfig } from '../core/duel-config';
 
-/** Réglages du duel : pas fixe, arène, rythme des actions, dégâts, physique. Voir README.md. */
+/** Réglages du duel : pas fixe, arène, rythme des actions, dégâts, stats, réactions, physique. Voir README.md. */
 export const DUEL_CONFIG: DuelConfig = {
   stepHz: 60,
   maxFrameMs: 100,
@@ -20,6 +20,7 @@ export const DUEL_CONFIG: DuelConfig = {
     firstDelayStaggerMs: 300,
     delayBaseMs: 400,
     delayRandomMs: 300,
+    approachResumeMargin: 15,
   },
   damage: {
     referenceSpeed: 8,
@@ -33,6 +34,29 @@ export const DUEL_CONFIG: DuelConfig = {
     maxMassScale: 3,
     minStunMs: 100,
     maxStunMs: 600,
+    maxStunSeriesMs: 900,
+    referenceActionSpeed: 10,
+    minDelayScale: 0.4,
+    maxDelayScale: 2.5,
+    walkWeightExponent: 1,
+    minWalkScale: 0.35,
+    maxWalkScale: 1.5,
+    knockbackSpeed: 3.5,
+    knockbackLift: 0.4,
+    minKnockbackRatio: 0.25,
+    maxKnockbackRatio: 4,
+    staminaRegenPerRecovery: 0.5,
+  },
+  reactions: {
+    dodgeChance: { base: 0.05, perAgility: 0.02, max: 0.6 },
+    parryChance: { base: 0.05, perAgility: 0.02, max: 0.6 },
+    counterChance: { base: 0.1, perAgility: 0.03, max: 0.8 },
+    comboChance: { base: 0.1, perAgility: 0.025, max: 0.7 },
+    leadMs: 150,
+    dodgeRetreatSpeed: 3,
+    parryFactor: 0.3,
+    maxComboHits: 3,
+    staminaCost: { attack: 6, dodge: 12, parry: 8, counter: 8, combo: 10 },
   },
   physics: {
     gravityY: 1,

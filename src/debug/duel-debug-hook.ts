@@ -1,8 +1,10 @@
 import type { Duel } from '../core/duel';
 import type { DuelWorld } from '../core/duel-world';
 import { FIGHTER_TRANSITIONS, type FighterState } from '../core/fighter-state';
+import type { Reaction } from '../core/reactions';
 import { hashNumbers } from '../core/state-hash';
 
+const REACTIONS: readonly Reaction[] = ['none', 'dodge', 'parry'];
 const FIGHTER_STATES = Object.keys(FIGHTER_TRANSITIONS) as FighterState[];
 
 /** Instantané du duel exposé sur `window.__untrucDuel`. */
@@ -45,6 +47,9 @@ export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld)
         fighter.stunTicks,
         fighter.stamina,
         fighter.mana,
+        fighter.comboHits,
+        fighter.stunSeriesTicks,
+        REACTIONS.indexOf(fighter.plannedReaction),
       ]);
       return Object.freeze({
         seed,

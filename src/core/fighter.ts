@@ -1,8 +1,10 @@
-import { msToTicks } from './duel-config';
+import { msToTicks, type DuelConfig } from './duel-config';
 import type { FighterIntent } from './duel-world';
 import type { FighterSpec } from './fighter-spec';
 import { FighterStateMachine, type FighterState } from './fighter-state';
 import { lerpPose, type Pose } from './pose';
+import type { Reaction } from './reactions';
+import { staminaRegenPerTick, walkSpeedScale } from './stats';
 
 /** Direction du regard : 1 = vers la droite de l'écran, -1 = vers la gauche. */
 export type Facing = 1 | -1;
@@ -25,18 +27,30 @@ export class Fighter {
   readonly recoveryTicks: number;
   /** Durée de l'étourdissement en cours, calculée à chaque coup reçu (`stunTicksFor`). */
   stunTicks = 0;
-  /** Endurance restante (voir `spendStamina`). */
+  /** Ticks déjà passés sonné dans la série d'étourdissements en cours (plafond : `maxStunSeriesMs`). */
+  stunSeriesTicks = 0;
+  /** Réaction que l'adversaire jouera contre l'attaque en cours de ce combattant, décidée à son lancement. */
+  plannedReaction: Reaction = 'none';
+  /** Rang du coup en cours dans sa série d'enchaînements (1 = coup isolé). */
+  comboHits = 0;
+  /** Tick de l'attaque (compté depuis son début) où l'adversaire lance sa réaction. */
+  readonly reactionTick: number;
+  /** Endurance restante (voir `spendStamina`, `recoverStamina`). */
   stamina: number;
   /** Mana restant (voir `spendMana`). */
   mana: number;
   private readonly walkCycleTicks: number;
+  private readonly walkSpeed: number;
+  private readonly dodgeRetreatSpeed: number;
+  private readonly staminaRegen: number;
 
   constructor(
     readonly index: number,
     readonly spec: FighterSpec,
     readonly facing: Facing,
-    stepHz: number,
+    config: DuelConfig,
   ) {
+    const { stepHz } = config;
     this.hp = spec.stats.hp;
     this.stamina = spec.stats.stamina;
     this.mana = spec.stats.mana;
@@ -44,6 +58,16 @@ export class Fighter {
     this.strikeTicks = msToTicks(spec.attack.strikeMs, stepHz);
     this.recoveryTicks = msToTicks(spec.attack.recoveryMs, stepHz);
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
+    this.reactionTick = Math.max(1, this.windupTicks - msToTicks(config.reactions.leadMs, stepHz));
+    this.walkSpeed = spec.walk.speed * walkSpeedScale(config, spec.stats);
+    this.dodgeRetreatSpeed = config.reactions.dodgeRetreatSpeed;
+    this.staminaRegen = staminaRegenPerTick(config, spec.stats);
+  }
+
+  /** Regagne un tick d'endurance, hors attaque, réaction et KO ; plafonné à la stat `stamina`. */
+  recoverStamina(): void {
+    if (this.state === 'attack' || this.state === 'dodge' || this.state === 'parry' || this.state === 'ko') return;
+    this.stamina = Math.min(this.spec.stats.stamina, this.stamina + this.staminaRegen);
   }
 
   /** Dépense de l'endurance ; ne descend pas sous 0. */
@@ -80,7 +104,9 @@ export class Fighter {
       armBoost: 1,
     };
     if (this.state === 'approach') {
-      intent.walkVelocity = this.facing * spec.walk.speed;
+      intent.walkVelocity = this.facing * this.walkSpeed;
+    } else if (this.state === 'dodge') {
+      intent.walkVelocity = -this.facing * this.dodgeRetreatSpeed;
     } else if (this.inStrikeWindow) {
       intent.walkVelocity = this.facing * spec.attack.lungeSpeed;
       intent.armBoost = spec.attack.strikeArmBoost;
@@ -105,6 +131,10 @@ export class Fighter {
       }
       case 'recovery':
         return lerpPose(spec.attack.strikePose, spec.stance, Math.min(1, ticks / this.recoveryTicks));
+      case 'dodge':
+        return spec.dodgePose;
+      case 'parry':
+        return spec.parryPose;
       case 'stunned':
       case 'ko':
         return spec.slump;

@@ -9,10 +9,20 @@ export class FakeDuelWorld implements DuelWorld {
   /** Contacts à renvoyer au prochain `drainContacts`, rejoués à chaque pas tant qu'ils ne sont pas changés. */
   contacts: ContactReport[] = [];
   steps = 0;
+  /** Positions x des bassins ; le test peut les déplacer entre deux pas. */
+  readonly positions: [number, number];
+  /** Impulsions de recul reçues, dans l'ordre. */
+  readonly impulses: { fighter: number; velocityX: number; velocityY: number }[] = [];
 
-  constructor(private readonly positions: readonly [number, number]) {}
+  constructor(positions: readonly [number, number]) {
+    this.positions = [...positions];
+  }
 
   drive(): void {}
+
+  impulse(fighter: number, velocityX: number, velocityY: number): void {
+    this.impulses.push({ fighter, velocityX, velocityY });
+  }
 
   step(): void {
     this.steps += 1;

@@ -48,6 +48,50 @@ export interface ActionConfig {
   delayBaseMs: number;
   /** Part aléatoire (seedée) ajoutée au délai de base : tirée dans [0, delayRandomMs). */
   delayRandomMs: number;
+  /**
+   * Marge en px contre l'hésitation en limite de portée : un combattant en
+   * marche s'arrête à `reach`, un combattant arrêté ne repart qu'au-delà de
+   * `reach + approachResumeMargin` (ou quand son délai d'action est écoulé).
+   */
+  approachResumeMargin: number;
+}
+
+/** Chance d'une réaction : `base + perAgility × agilité`, bornée entre 0 et `max`. */
+export interface ChanceConfig {
+  base: number;
+  perAgility: number;
+  max: number;
+}
+
+/** Coût en endurance de chaque action et réaction. */
+export interface StaminaCostConfig {
+  attack: number;
+  dodge: number;
+  parry: number;
+  /** Remplace le coût d'attaque pour une contre-attaque. */
+  counter: number;
+  /** Remplace le coût d'attaque pour un coup enchaîné. */
+  combo: number;
+}
+
+/** Esquive, parade, contre-attaque, enchaînement (story-009). */
+export interface ReactionsConfig {
+  dodgeChance: ChanceConfig;
+  /** Tirée seulement si l'esquive a échoué. */
+  parryChance: ChanceConfig;
+  /** Tirée à la fin d'une esquive ou d'une parade. */
+  counterChance: ChanceConfig;
+  /** Tirée à la fin d'un coup qui a touché sans être paré. */
+  comboChance: ChanceConfig;
+  /** Avance du geste du défenseur sur le début de la frappe adverse, en ms. */
+  leadMs: number;
+  /** Vitesse de recul du bassin pendant une esquive (px par pas). */
+  dodgeRetreatSpeed: number;
+  /** Facteur appliqué aux dégâts et au recul d'un coup paré (0..1). */
+  parryFactor: number;
+  /** Nombre maximal de coups d'une même série (premier coup compris). */
+  maxComboHits: number;
+  staminaCost: StaminaCostConfig;
 }
 
 /**
@@ -77,6 +121,26 @@ export interface StatsConfig {
   /** Bornes de la durée d'étourdissement d'un coup, en ms. */
   minStunMs: number;
   maxStunMs: number;
+  /** Durée totale maximale d'une série d'étourdissements, en ms (voir `Duel`). */
+  maxStunSeriesMs: number;
+  /** Vitesse qui donne exactement le délai d'action de base. */
+  referenceActionSpeed: number;
+  /** Bornes du facteur de délai `referenceActionSpeed / speed`. */
+  minDelayScale: number;
+  maxDelayScale: number;
+  /** Vitesse de marche × `(referenceWeight / weight) ^ walkWeightExponent`, bornée ci-dessous. */
+  walkWeightExponent: number;
+  minWalkScale: number;
+  maxWalkScale: number;
+  /** Recul (px par pas) donné à la victime par un coup d'impact de référence, à poids égaux. */
+  knockbackSpeed: number;
+  /** Part du recul envoyée vers le haut (0 = recul à plat). */
+  knockbackLift: number;
+  /** Bornes du rapport de poids attaquant / victime qui multiplie le recul. */
+  minKnockbackRatio: number;
+  maxKnockbackRatio: number;
+  /** Endurance regagnée par seconde et par point de la stat `recovery`. */
+  staminaRegenPerRecovery: number;
 }
 
 /** Configuration générale d'un duel. */
@@ -99,22 +163,27 @@ export interface DuelConfig {
   action: ActionConfig;
   damage: DamageConfig;
   stats: StatsConfig;
+  reactions: ReactionsConfig;
   physics: PhysicsTuning;
 }
 
 /**
- * Refuse une config dont un diviseur des formules n'est pas strictement
- * positif : sans ce contrôle, les dégâts ou la masse deviendraient infinis ou
- * `NaN` sans erreur. Appelée à la création d'un duel.
+ * Refuse une config dont une valeur qui doit être strictement positive ne
+ * l'est pas (diviseurs des formules, bornes basses des facteurs) : sans ce
+ * contrôle, les dégâts ou la masse deviendraient infinis ou `NaN` sans erreur. Appelée à la création d'un duel.
  */
 export function assertDuelConfig(config: DuelConfig): void {
-  const divisors: Record<string, number> = {
+  const positives: Record<string, number> = {
     'damage.referenceSpeed': config.damage.referenceSpeed,
     'stats.referencePhysicalPower': config.stats.referencePhysicalPower,
     'stats.referenceWeight': config.stats.referenceWeight,
     'stats.minMassScale': config.stats.minMassScale,
+    'stats.referenceActionSpeed': config.stats.referenceActionSpeed,
+    'stats.minDelayScale': config.stats.minDelayScale,
+    'stats.minWalkScale': config.stats.minWalkScale,
+    'reactions.maxComboHits': config.reactions.maxComboHits,
   };
-  for (const [name, value] of Object.entries(divisors)) {
+  for (const [name, value] of Object.entries(positives)) {
     if (!(value > 0)) throw new Error(`Config du duel invalide : ${name} doit être strictement positif (reçu ${value}).`);
   }
 }

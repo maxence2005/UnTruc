@@ -111,6 +111,10 @@ export interface FighterSpec {
   muscles: MuscleSpec;
   stance: Pose;
   slump: Pose;
+  /** Geste d'esquive : pose tenue pendant que le coup adverse passe. */
+  dodgePose: Pose;
+  /** Garde de parade : pose tenue pendant que le coup adverse arrive. */
+  parryPose: Pose;
   walk: WalkSpec;
   attack: AttackSpec;
   /** Étourdissement de base d'un coup d'impact de référence sur un poids de référence, avant bornes (voir `StatsConfig`). */

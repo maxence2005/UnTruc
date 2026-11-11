@@ -19,6 +19,7 @@ const STAT_NAMES: (keyof FighterStats)[] = [
   'physicalPower',
   'magicPower',
   'stamina',
+  'recovery',
   'mana',
   'agility',
   'speed',
@@ -42,7 +43,7 @@ function play(specs: readonly [FighterSpec, FighterSpec], seed = SEED, contactsF
 }
 
 describe('Fighter stats', () => {
-  it('gives every fighter the nine stats as numbers in the data', () => {
+  it('gives every fighter the ten stats as numbers in the data', () => {
     for (const fighter of FIGHTERS) {
       expect(Object.keys(fighter.stats).sort()).toEqual([...STAT_NAMES].sort());
       for (const name of STAT_NAMES) expect(Number.isFinite(fighter.stats[name])).toBe(true);

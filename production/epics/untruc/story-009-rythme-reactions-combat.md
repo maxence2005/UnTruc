@@ -1,12 +1,12 @@
 # Story 009: Rythme et réactions de combat
 
 > **Epic**: UnTruc (MVP)
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: N/A (minimal)
 > **Type**: Integration
 > **Estimate**: L
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: [set by /dev-story when implementation begins]
+> **Last Updated**: 2026-11-11
 
 ## Context
 
@@ -64,13 +64,26 @@
 
 ## Files
 
-- src/core/ (décision des réactions, enchaînements, endurance, événements)
-- src/content/duel-config.ts (chances, coûts, durées)
-- src/physics/ (poses et impulsions d'esquive, de parade, de contre)
-- src/scenes/duel-scene.ts
-- tests/unit/reactions.test.ts (optional at qa.level minimal)
-
----
+- src/content/duel-config.ts
+- src/content/fighters.ts
+- src/content/README.md
+- src/core/duel-config.ts
+- src/core/duel-world.ts
+- src/core/duel.ts
+- src/core/events.ts
+- src/core/fighter-spec.ts
+- src/core/fighter-state.ts
+- src/core/fighter.ts
+- src/core/reactions.ts
+- src/core/stats.ts
+- src/debug/duel-debug-hook.ts
+- src/physics/matter-duel-world.ts
+- tests/unit/duel/duel.test.ts
+- tests/unit/duel/fake-duel-world.ts
+- tests/unit/duel/reaction-fixtures.ts
+- tests/unit/reactions.test.ts
+- tests/unit/rhythm.test.ts
+- tests/unit/stats.test.ts
 
 ## QA Test Cases
 
@@ -80,12 +93,12 @@
 
 ## Test Evidence
 
-*At `qa.level: minimal` tests are waived (advisory).*
+*At `qa.level: standard` (depuis le 2026-11-11), un test est requis pour une story Integration.*
 
 **Story Type**: Integration
-**Required evidence**: waived at qa.level minimal; a playtest note is welcome. Le duel est lancé et observé avant de clore (capture dans `production/qa/evidence/`).
+**Required evidence**: tests Vitest (`tests/unit/reactions.test.ts`, `tests/unit/rhythm.test.ts`) ; le duel est lancé et observé avant de clore (captures dans `production/qa/evidence/story-009-rythme-reactions-combat/`).
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created — `tests/unit/reactions.test.ts`, `tests/unit/rhythm.test.ts`, captures 01 et 02
 
 ---
 
@@ -93,3 +106,21 @@
 
 - Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`, `production/epics/untruc/story-008-stats-combattant.md`
 - Unlocks: `production/epics/untruc/story-002-armes-physiques.md`
+
+---
+
+## Completion Notes
+**Completed**: 2026-11-11
+**Criteria**: 13/14 passing (1 deferred : esquive à vérifier en jouant, pas de capture d'une esquive)
+**Deviations**: None
+**Test Evidence**: `tests/unit/reactions.test.ts`, `tests/unit/rhythm.test.ts` (26 tests) ; captures dans `production/qa/evidence/story-009-rythme-reactions-combat/`
+**Reviewed by**: `/code-review` run in this session (APPROVED WITH SUGGESTIONS, suggestions applied) ; engine review by lead-programmer
+
+## Calls beyond the design
+- Chances à agilité 10 : esquive 25 %, parade 25 %, contre-attaque 40 %, enchaînement 35 % ; 3 coups max par enchaînement (`src/content/duel-config.ts`) · kept 2026-11-11
+- Parade : 30 % des dégâts et du recul, pas d'étourdissement (`reactions.parryFactor`) · kept 2026-11-11
+- Endurance : coûts 6 attaque, 12 esquive, 8 parade, 8 contre, 10 enchaînement ; récupération 5 par seconde à `recovery` 10 ; une attaque simple reste possible à sec (`src/content/duel-config.ts`, `src/content/fighters.ts`) · kept 2026-11-11
+- Dixième stat `recovery` (récupération d'endurance), base 10 (`src/content/fighters.ts`) · kept 2026-11-11
+- Recul d'un coup 3,5 px par pas selon le rapport de poids (borné 0,25 à 4) ; plafond d'étourdissement d'une série 900 ms ; marge de portée 15 px ; vitesse de marche selon le poids bornée 0,35 à 1,5 (`src/content/duel-config.ts`) · kept 2026-11-11
+- Initiative : quand les deux sont prêts au même instant, tirage seedé pondéré par la vitesse, le perdant attend la fin du coup (`src/core/duel.ts`, `src/core/reactions.ts`) · kept 2026-11-11
+- Un enchaînement est imparable (la victime est encore sonnée) · kept 2026-11-11
