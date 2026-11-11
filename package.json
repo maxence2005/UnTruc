@@ -9,13 +9,16 @@
     "build": "tsc --noEmit && vite build",
     "smoke": "tsc --noEmit && vite build",
     "proto:combat": "vite prototypes/combat-animation-concept",
-    "proto:combat:build": "tsc --noEmit -p prototypes/combat-animation-concept && vite build prototypes/combat-animation-concept"
+    "proto:combat:build": "tsc --noEmit -p prototypes/combat-animation-concept && vite build prototypes/combat-animation-concept",
+    "test": "vitest run",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "phaser": "4.2.1"
   },
   "devDependencies": {
     "typescript": "7.0.2",
-    "vite": "8.3.7"
+    "vite": "8.3.7",
+    "vitest": "5.0.5"
   }
 }

@@ -57,3 +57,7 @@ commands:
 modes:
   rigor: minimal
   automation: autonomous
+  review_mode: lean
+
+qa:
+  level: standard
