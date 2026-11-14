@@ -1,0 +1,9 @@
+Reviewed-Content-Hash: src/content/face-kit.ts 464c8851736986f0ed91727433b861751a5b86bd
+Reviewed-Content-Hash: src/content/fighters.ts 595ed8eb08c02fc4ca78696a1804b6ca99e2c395
+Reviewed-Content-Hash: src/content/presentation.ts f88ecf7d90dea8634ccb3164f626693daeff6578
+Reviewed-Content-Hash: src/content/README.md 2883b2ea9dd575c4300953e1cea7844a7784d4fe
+Reviewed-Content-Hash: src/core/fighter-spec.ts 6652b8001f0a3a672ae6cec9ef675cd6f1853f2e
+Reviewed-Content-Hash: src/core/presentation-config.ts d04e339d540d8c2cb11898d823f6f69a810c20ef
+Reviewed-Content-Hash: src/render/face-drawing.ts ba7566e796b6d0793285db90562faca85f061838
+Reviewed-Content-Hash: src/render/fighter-view.ts 9d2914202eff5695b97a5f232f8b32e1cf4752b7
+Reviewed-Content-Hash: src/scenes/duel-scene.ts e395e6ecaeefc1a71c97888b378c394d3821b358

@@ -1,12 +1,12 @@
 # Story 010: Look des combattants de la piste 5
 
 > **Epic**: UnTruc (MVP)
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: N/A (minimal)
 > **Type**: Visual/Feel
 > **Estimate**: S
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: [set by /dev-story when implementation begins]
+> **Last Updated**: 2026-11-14
 
 ## Context
 
@@ -56,12 +56,15 @@
 
 ## Files
 
+- src/content/face-kit.ts
+- src/content/fighters.ts
+- src/content/presentation.ts
+- src/content/README.md
+- src/core/fighter-spec.ts
+- src/core/presentation-config.ts
+- src/render/face-drawing.ts
 - src/render/fighter-view.ts
-- src/render/ (dessin de la tête)
-- src/core/fighter-spec.ts (apparence en données)
-- src/content/fighters.ts, src/content/presentation.ts
-
----
+- src/scenes/duel-scene.ts
 
 ## QA Test Cases
 
@@ -74,7 +77,7 @@
 **Story Type**: Visual/Feel
 **Required evidence**: a retained screenshot in `production/qa/evidence/`, plus Maxence's sign-off
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created — captures dans `production/qa/evidence/story-010-look-combattants-piste-5/`, accord dans `production/qa/evidence/story-010-look-combattants-piste-5-evidence.md`
 
 ---
 
@@ -82,3 +85,18 @@
 
 - Depends on: `production/epics/untruc/story-001-moteur-duel-ragdoll.md`
 - Unlocks: None
+
+---
+
+## Completion Notes
+**Completed**: 2026-11-14
+**Criteria**: 6/6 passing (none deferred)
+**Deviations**: None
+**Test Evidence**: captures `production/qa/evidence/story-010-look-combattants-piste-5/01` à `03` ; accord de Maxence dans `production/qa/evidence/story-010-look-combattants-piste-5-evidence.md`
+**Reviewed by**: `/code-review` run in this session (APPROVED WITH SUGGESTIONS, suggestions 1 à 4 applied, 5 logged as TD-004) ; engine review by lead-programmer
+
+## Calls beyond the design
+- Rouge : yeux fâchés, bouche à dents, pics blonds, sans barbe ; Bleu : yeux ronds, sourire, coupe au bol rousse, barbe (`src/content/fighters.ts`) · kept 2026-11-14
+- Contour de 3 px, couleur encre de l'art bible `0x22302a` (`src/content/fighters.ts`) · kept 2026-11-14
+- Yeux plus gros et plus bas que dans le prototype, joue rose à 35 % d'opacité (`src/content/face-kit.ts`) · kept 2026-11-14
+- Six coiffures au catalogue : chauve, pics, bol, crête, longs, chignon, dont quatre pas encore vues à l'écran (`src/content/face-kit.ts`) · kept 2026-11-14

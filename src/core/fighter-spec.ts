@@ -97,8 +97,71 @@ export interface StateTuning {
 export interface FighterColors {
   body: number;
   limbBack: number;
+  /** Peau : tête (et nez). */
   head: number;
-  eye: number;
+  /** Peau à l'ombre : oreille. */
+  headShade: number;
+  hair: number;
+  /** Encre : contour de la tête et du corps, pupille, sourcil, bouche. */
+  outline: number;
+  eyeWhite: number;
+  cheek: number;
+}
+
+/** Couleur d'une pièce du visage, par rôle (résolu dans `FighterColors`). */
+export type FaceColorRole = 'skin' | 'shade' | 'hair' | 'ink' | 'white' | 'cheek';
+
+/** Variantes d'yeux : rond, fâché (sourcil penché), fin (fente). */
+export type EyeStyle = 'round' | 'angry' | 'thin';
+/** Variantes de bouche : grr (trait), sourire, o, dents. */
+export type MouthStyle = 'grr' | 'smile' | 'o' | 'teeth';
+/** Coiffures du prototype : chauve, pics, bol, iroquoise, longs, chignon. */
+export type HairStyle = 'bald' | 'spikes' | 'bowl' | 'mohawk' | 'long' | 'bun';
+
+/**
+ * Une pièce dessinée du visage. Coordonnées en rayon de tête, origine au centre
+ * de la tête, `+x` vers l'avant (le rendu retourne pour qui regarde à gauche) ;
+ * angles en radians, `y` vers le bas. `outlined` : cerne la pièce de l'encre
+ * (cercle, rectangle et pointe seulement).
+ */
+export type FacePiece = {
+  color: FaceColorRole;
+  alpha?: number;
+} & (
+  | { shape: 'circle'; x: number; y: number; r: number; outlined?: boolean }
+  | { shape: 'ellipse'; x: number; y: number; width: number; height: number }
+  | { shape: 'rect'; x: number; y: number; width: number; height: number; radius: number; outlined?: boolean }
+  | { shape: 'cap'; x: number; y: number; r: number; from: number; to: number }
+  | { shape: 'spike'; x: number; y: number; tipX: number; tipY: number; halfBase: number; outlined?: boolean }
+  | { shape: 'line'; x1: number; y1: number; x2: number; y2: number; width: number }
+  | { shape: 'arc'; x: number; y: number; r: number; from: number; to: number; width: number }
+);
+
+/** Cheveux : pièces derrière la tête (longs, chignon) et devant (frange, pics). */
+export interface HairKit {
+  back: readonly FacePiece[];
+  front: readonly FacePiece[];
+}
+
+/** Catalogue des pièces du visage, partagé par les combattants : le rendu ne connaît aucune forme. */
+export interface FaceKit {
+  /** Crâne, nez, oreille, joue : dessinés dans cet ordre, sous le reste. */
+  base: readonly FacePiece[];
+  beard: readonly FacePiece[];
+  eyes: Readonly<Record<EyeStyle, readonly FacePiece[]>>;
+  mouths: Readonly<Record<MouthStyle, readonly FacePiece[]>>;
+  hair: Readonly<Record<HairStyle, HairKit>>;
+}
+
+/** Apparence d'un combattant : variantes choisies parmi le catalogue, et épaisseur du contour. */
+export interface FighterLook {
+  eyes: EyeStyle;
+  mouth: MouthStyle;
+  hair: HairStyle;
+  beard: boolean;
+  /** Épaisseur du contour de la tête et du corps, en pixels. */
+  outlineWidth: number;
+  kit: FaceKit;
 }
 
 /** Définition complète d'un combattant : de la donnée, lue par un moteur générique. */
@@ -106,6 +169,7 @@ export interface FighterSpec {
   id: string;
   name: string;
   colors: FighterColors;
+  look: FighterLook;
   stats: FighterStats;
   body: BodySpec;
   muscles: MuscleSpec;

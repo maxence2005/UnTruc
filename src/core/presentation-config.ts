@@ -28,9 +28,5 @@ export interface PresentationConfig {
   groundColor: number;
   groundEdgeColor: number;
   groundEdgeThickness: number;
-  /** Rayon de l'œil, en part du rayon de la tête. */
-  eyeRadiusRatio: number;
-  /** Décalage de l'œil vers l'avant, en part du rayon de la tête. */
-  eyeOffsetRatio: number;
   hud: HudPresentation;
 }

@@ -1,11 +1,11 @@
 import * as Phaser from 'phaser';
 import { BODY_PART_NAMES, type BodyPartName, type DuelWorld } from '../core/duel-world';
 import type { Facing } from '../core/fighter';
-import type { BodySpec, FighterColors } from '../core/fighter-spec';
-import type { PresentationConfig } from '../core/presentation-config';
+import type { BodySpec, FighterColors, FighterLook } from '../core/fighter-spec';
+import { drawFace, fillOutlinedRect } from './face-drawing';
 
-interface PartLook {
-  kind: 'rect' | 'circle';
+/** Aspect d'une partie du corps hors tête : un rectangle arrondi. */
+interface LimbLook {
   width: number;
   height: number;
   radius: number;
@@ -14,14 +14,15 @@ interface PartLook {
   layer: number;
 }
 
-function limbLook(width: number, length: number, color: number, layer: number): PartLook {
-  return { kind: 'rect', width, height: length + width, radius: width / 2, color, layer };
+const HEAD_LAYER = 2;
+
+function limbLook(width: number, length: number, color: number, layer: number): LimbLook {
+  return { width, height: length + width, radius: width / 2, color, layer };
 }
 
-function partLooks(body: BodySpec, colors: FighterColors): Record<BodyPartName, PartLook> {
+function limbLooks(body: BodySpec, colors: FighterColors): Record<Exclude<BodyPartName, 'head'>, LimbLook> {
   return {
-    torso: { kind: 'rect', width: body.torsoWidth, height: body.torsoHeight, radius: body.torsoCornerRadius, color: colors.body, layer: 1 },
-    head: { kind: 'circle', width: body.headRadius * 2, height: body.headRadius * 2, radius: body.headRadius, color: colors.head, layer: 2 },
+    torso: { width: body.torsoWidth, height: body.torsoHeight, radius: body.torsoCornerRadius, color: colors.body, layer: 1 },
     upperArmBack: limbLook(body.armWidth, body.upperArm, colors.limbBack, 0),
     foreArmBack: limbLook(body.armWidth, body.foreArm, colors.limbBack, 0),
     thighBack: limbLook(body.legWidth, body.thigh, colors.limbBack, 0),
@@ -35,8 +36,10 @@ function partLooks(body: BodySpec, colors: FighterColors): Record<BodyPartName, 
 
 /**
  * Dessin d'un combattant : un objet Graphics par partie du corps, créé une fois,
- * repositionné à chaque image d'après la physique. Lecture seule : ne modifie ni
- * la physique ni les règles.
+ * repositionné à chaque image d'après la physique. Chaque partie porte un contour
+ * d'encre ; la tête porte le visage de `look`, retourné pour qui regarde à gauche
+ * et qui tourne avec le corps de la tête. Lecture seule : ne modifie ni la
+ * physique ni les règles.
  */
 export class FighterView {
   private readonly shapes = new Map<BodyPartName, Phaser.GameObjects.Graphics>();
@@ -48,23 +51,18 @@ export class FighterView {
     body: BodySpec,
     colors: FighterColors,
     facing: Facing,
-    presentation: PresentationConfig,
+    look: FighterLook,
   ) {
-    const looks = partLooks(body, colors);
+    const looks = limbLooks(body, colors);
     for (const part of BODY_PART_NAMES) {
-      const look = looks[part];
-      const shape = scene.add.graphics().setDepth(fighter * 10 + look.layer);
-      shape.fillStyle(look.color, 1);
-      if (look.kind === 'circle') {
-        shape.fillCircle(0, 0, look.radius);
-        shape.fillStyle(colors.eye, 1);
-        shape.fillCircle(
-          facing * look.radius * presentation.eyeOffsetRatio,
-          -look.radius * presentation.eyeOffsetRatio * 0.5,
-          look.radius * presentation.eyeRadiusRatio,
-        );
+      const shape = scene.add.graphics();
+      if (part === 'head') {
+        drawFace(shape, body.headRadius, look, colors);
+        shape.setScale(facing, 1).setDepth(fighter * 10 + HEAD_LAYER);
       } else {
-        shape.fillRoundedRect(-look.width / 2, -look.height / 2, look.width, look.height, look.radius);
+        const limb = looks[part];
+        fillOutlinedRect(shape, 0, 0, limb.width, limb.height, limb.radius, limb.color, 1, look.outlineWidth, colors.outline);
+        shape.setDepth(fighter * 10 + limb.layer);
       }
       this.shapes.set(part, shape);
     }

@@ -6,8 +6,6 @@ export const PRESENTATION: PresentationConfig = {
   groundColor: 0x3b3f4a,
   groundEdgeColor: 0x7d8494,
   groundEdgeThickness: 4,
-  eyeRadiusRatio: 0.18,
-  eyeOffsetRatio: 0.45,
   hud: {
     margin: 40,
     barWidth: 420,

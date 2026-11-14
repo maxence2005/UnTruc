@@ -47,7 +47,7 @@ export class DuelScene extends Phaser.Scene {
     );
     drawArena(this, config.arena, presentation);
     this.views = this.duel.fighters.map(
-      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, fighter.facing, presentation),
+      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, fighter.facing, fighter.spec.look),
     );
     this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
     installDuelDebugHook(seed, this.duel, this.world);

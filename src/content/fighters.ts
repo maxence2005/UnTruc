@@ -1,5 +1,6 @@
 import type { FighterSpec } from '../core/fighter-spec';
 import type { Pose } from '../core/pose';
+import { FACE_KIT } from './face-kit';
 
 const STANCE: Pose = {
   lean: 0.1,
@@ -68,7 +69,7 @@ const PARRY: Pose = {
   crouch: 10,
 };
 
-const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
+const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors' | 'look'> = {
   stats: {
     hp: 100,
     physicalPower: 10,
@@ -141,18 +142,27 @@ const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors'> = {
   },
 };
 
-/** Les deux combattants du duel : même corps, couleurs différentes. */
+const OUTLINE_WIDTH = 3;
+const SKIN = 0xf0c8a0;
+const SKIN_SHADE = 0xc5a483;
+const INK = 0x22302a;
+const CHALK = 0xf3f5ef;
+const CHEEK = 0xff8a80;
+
+/** Les deux combattants du duel : même corps, couleurs et visage différents. */
 export const FIGHTERS: readonly [FighterSpec, FighterSpec] = [
   {
     ...BASE_FIGHTER,
     id: 'rouge',
     name: 'Rouge',
-    colors: { body: 0xd9534f, limbBack: 0x9c3a37, head: 0xf0c8a0, eye: 0x222222 },
+    colors: { body: 0xd9534f, limbBack: 0x9c3a37, head: SKIN, headShade: SKIN_SHADE, hair: 0xf2d16b, outline: INK, eyeWhite: CHALK, cheek: CHEEK },
+    look: { eyes: 'angry', mouth: 'teeth', hair: 'spikes', beard: false, outlineWidth: OUTLINE_WIDTH, kit: FACE_KIT },
   },
   {
     ...BASE_FIGHTER,
     id: 'bleu',
     name: 'Bleu',
-    colors: { body: 0x4a7fd1, limbBack: 0x315590, head: 0xf0c8a0, eye: 0x222222 },
+    colors: { body: 0x4a7fd1, limbBack: 0x315590, head: SKIN, headShade: SKIN_SHADE, hair: 0xa8682f, outline: INK, eyeWhite: CHALK, cheek: CHEEK },
+    look: { eyes: 'round', mouth: 'smile', hair: 'bowl', beard: true, outlineWidth: OUTLINE_WIDTH, kit: FACE_KIT },
   },
 ];

@@ -29,6 +29,11 @@ Aucune valeur d'équilibrage ne vit dans la logique : tout se règle ici.
   - Formules des stats (`stats`) : `referencePhysicalPower` (10, puissance qui donne les dégâts de base), `referenceWeight` (70, poids qui donne la masse de base), `minMassScale` (0.5) et `maxMassScale` (3) bornent `weight / referenceWeight` (masse et étourdissement), `minStunMs` (100) et `maxStunMs` (600) bornent la durée d'étourdissement.
   - Vitesse minimale d'un contact pour compter comme un coup : `minHitSpeed`.
   - Seed par défaut : `seedDefault` (l'URL peut la remplacer avec `?seed=123`).
+- **Le look d'un combattant** (story 010) : champ `look` de chaque entrée de `FIGHTERS` (`fighters.ts`).
+  - `eyes` : `round`, `angry` ou `thin` ; `mouth` : `grr`, `smile`, `o` ou `teeth` ; `hair` : `bald`, `spikes`, `bowl`, `mohawk`, `long` ou `bun` ; `beard` : vrai ou faux.
+  - Couleurs (`colors`) : corps, membre arrière, peau, ombre de peau, cheveux, contour, blanc de l'œil, joue.
+  - Épaisseur du contour : `OUTLINE_WIDTH` dans `fighters.ts`.
+  - Formes des pièces du visage (taille des yeux, bouches, coiffures, barbe), en rayon de tête : `face-kit.ts`. Ajouter une variante = l'ajouter au type dans `core/fighter-spec.ts`, puis au catalogue `FACE_KIT` ; le rendu ne change pas.
 - **Couleurs de l'arène, textes de l'interface** : `presentation.ts`.
 
 Un même seed et les mêmes combattants donnent le même duel. Changer une valeur
