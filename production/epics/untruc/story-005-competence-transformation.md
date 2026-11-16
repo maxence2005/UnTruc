@@ -33,6 +33,7 @@
 - [ ] Une fois transformé, le combattant attaque avec ses griffes, qui laissent des traces visibles à l'impact.
 - [ ] Le moment de la transformation se voit et se lit (nom ou icône de la compétence, effet visuel).
 - [ ] Les attributs du loup-garou sont des cosmétiques accrochés aux parties du corps, réutilisables.
+- [ ] Comme toute compétence, la Transformation a ses effets visuels au niveau de ceux de la story 003 (la règle est posée dans la story 004). *(Maxence, 2026-11-16)*
 
 ---
 

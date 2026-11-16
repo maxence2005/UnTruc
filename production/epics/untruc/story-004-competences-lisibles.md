@@ -34,6 +34,8 @@
 - [ ] Quand un coup ne fait pas de dégâts, la raison s'affiche (bloqué, esquivé, raté).
 - [ ] Au moins trois compétences sont jouables, dont le saut et la boule de feu.
 - [ ] Un spectateur qui ne connaît pas le code comprend, sur un duel, pourquoi chaque coup a touché ou non (vérifié par Maxence à la sign-off).
+- [ ] Chaque compétence a ses effets visuels, au niveau de ceux de la story 003 (étincelles, onde de choc, flash, traînée, ralenti selon sa force) : une compétence sans effet n'est pas finie. Ses effets s'abonnent aux événements de la compétence, la logique ne les appelle jamais. *(Maxence, 2026-11-16 : « à chaque fois qu'on mettra en place une compétence, il faudra faire des effets comme ça »)*
+- [ ] La boule de feu se lance à distance : un combattant ne la lance pas au corps à corps, seulement quand l'adversaire est au-delà d'une distance minimale fixée dans la config. *(Maxence, 2026-11-16)*
 
 ---
 

@@ -9,6 +9,7 @@ import { installWeaponProbe } from '../debug/weapon-probe';
 import { MatterDuelWorld } from '../physics/matter-duel-world';
 import { drawArena } from '../render/arena-view';
 import { FighterView } from '../render/fighter-view';
+import { ImpactFx } from '../render/fx/impact-fx';
 import { DuelHud } from '../ui/duel-hud';
 
 /**
@@ -25,6 +26,8 @@ export interface DuelSceneSetup {
   config: DuelConfig;
   fighters: readonly [FighterSpec, FighterSpec];
   presentation: PresentationConfig;
+  /** Lance une boule de feu de démonstration au début (`?fx=fireball`) ; la touche F en lance une à tout moment. */
+  demoFireball?: boolean;
 }
 
 /**
@@ -36,6 +39,8 @@ export class DuelScene extends Phaser.Scene {
   private world!: MatterDuelWorld;
   private views: FighterView[] = [];
   private hud!: DuelHud;
+  private fx!: ImpactFx;
+  private readonly onFireballKey = (): void => this.fx.launchDemoFireball();
   private accumulatorMs = 0;
   /** Sonde de debug des armes, appelée après chaque pas quand un combattant est armé. */
   private probe: (() => void) | null = null;
@@ -58,8 +63,15 @@ export class DuelScene extends Phaser.Scene {
     );
     drawArena(this, config.arena, presentation);
     this.views = this.duel.fighters.map(
-      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, () => fighter.facing, fighter.spec.look, fighter.spec.weapon),
+      (fighter) => new FighterView(this, this.world, fighter.index, fighter.spec.body, fighter.spec.colors, () => fighter.facing, fighter.spec.look, fighter.spec.weapon, presentation.fx.flash.color),
     );
+    this.fx = new ImpactFx(this, this.duel.events, this.world, this.views, (fighter) => this.duel.fighters[fighter].spec.stats.hp, config.arena, presentation.fx);
+    if (this.setup.demoFireball === true) this.fx.scheduleDemoFireball();
+    this.input.keyboard?.on('keydown-F', this.onFireballKey);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.fx.destroy();
+      this.input.keyboard?.off('keydown-F', this.onFireballKey);
+    });
     this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
     installDuelDebugHook(seed, this.duel, this.world);
     const armed = fighters.some((fighter) => fighter.weapon !== undefined);
@@ -70,12 +82,14 @@ export class DuelScene extends Phaser.Scene {
   override update(_time: number, deltaMs: number): void {
     const { stepHz, maxFrameMs } = this.setup.config;
     const stepMs = 1000 / stepHz;
-    this.accumulatorMs += Math.min(deltaMs, maxFrameMs);
+    const realMs = Math.min(deltaMs, maxFrameMs);
+    this.accumulatorMs += realMs * this.fx.timeScale;
     while (this.accumulatorMs >= stepMs) {
       this.duel.update(this.world);
       this.probe?.();
       this.accumulatorMs -= stepMs;
     }
+    this.fx.update(realMs);
     for (const view of this.views) view.update();
     this.hud.update();
   }

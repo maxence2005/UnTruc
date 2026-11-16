@@ -23,6 +23,13 @@ const HEAD_LAYER = 2;
  * devant la victime, quel que soit le combattant qui la tient.
  */
 const WEAPON_DEPTH = 2 * DEPTH_STRIDE;
+/**
+ * Profondeur des effets d'impact (`render/fx`) : devant les deux combattants, juste
+ * derrière les armes, pour qu'un effet ne cache jamais une arme (art bible).
+ */
+export const FX_DEPTH = WEAPON_DEPTH - 0.5;
+/** Le voile de flash se dessine juste au-dessus de sa partie. */
+const FLASH_DEPTH_OFFSET = 0.5;
 
 function limbLook(width: number, length: number, color: number, layer: number): LimbLook {
   return { width, height: length + width, radius: width / 2, color, layer };
@@ -53,6 +60,9 @@ function limbLooks(body: BodySpec, colors: FighterColors): Record<Exclude<BodyPa
 export class FighterView {
   private readonly shapes = new Map<BodyPartName, Phaser.GameObjects.Graphics>();
   private readonly weaponShape?: Phaser.GameObjects.Graphics;
+  /** Voile de flash : même forme que chaque partie, en aplat, affiché à `flashAlpha`. */
+  private readonly flashShapes = new Map<BodyPartName, Phaser.GameObjects.Graphics>();
+  private flashAlpha = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -63,6 +73,7 @@ export class FighterView {
     private readonly facing: () => Facing,
     look: FighterLook,
     weapon?: WeaponSpec,
+    flashColor = 0xffffff,
   ) {
     const looks = limbLooks(body, colors);
     for (const part of BODY_PART_NAMES) {
@@ -76,8 +87,22 @@ export class FighterView {
         shape.setDepth(fighter * DEPTH_STRIDE + limb.layer);
       }
       this.shapes.set(part, shape);
+      const flash = scene.add.graphics().setVisible(false).setDepth(shape.depth + FLASH_DEPTH_OFFSET);
+      if (part === 'head') {
+        flash.fillStyle(flashColor, 1);
+        flash.fillCircle(0, 0, body.headRadius + look.outlineWidth);
+      } else {
+        const limb = looks[part];
+        fillOutlinedRect(flash, 0, 0, limb.width, limb.height, limb.radius, flashColor, 1, look.outlineWidth, flashColor);
+      }
+      this.flashShapes.set(part, flash);
     }
     if (weapon !== undefined) this.weaponShape = drawWeapon(scene, weapon, look.outlineWidth, colors.outline).setDepth(WEAPON_DEPTH + fighter);
+  }
+
+  /** Règle l'opacité du flash du combattant (0 = aucun) ; prise en compte au prochain `update`. */
+  setFlash(alpha: number): void {
+    this.flashAlpha = alpha;
   }
 
   /** Recale chaque partie sur la position et l'angle de son corps physique ; le visage suit le regard courant. */
@@ -86,6 +111,9 @@ export class FighterView {
       const transform = this.world.readPart(this.fighter, part);
       shape.setPosition(transform.x, transform.y);
       shape.setRotation(transform.angle);
+      const flash = this.flashShapes.get(part)!;
+      flash.setVisible(this.flashAlpha > 0);
+      if (this.flashAlpha > 0) flash.setPosition(transform.x, transform.y).setRotation(transform.angle).setAlpha(this.flashAlpha);
     }
     this.shapes.get('head')!.setScale(this.facing(), 1);
     if (this.weaponShape !== undefined) {

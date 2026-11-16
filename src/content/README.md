@@ -48,3 +48,15 @@ ici change le duel, c'est normal.
 Le duel oppose les deux entrées de `FIGHTERS` (`fighters.ts`) : modifier ou
 remplacer ces deux entrées. Un combattant de plus = une entrée de plus dans la
 liste des specs, à brancher ensuite dans `main.ts`.
+
+## Régler les effets d'impact (story 003)
+
+Champ `fx` de `PRESENTATION` (`presentation.ts`), type `FxConfig` dans `core/presentation-config.ts`. Aucun effet ne change le duel.
+
+- Seuils (`fx.thresholds`), en part des PV max de la victime perdue sur un coup : `slowmoDamageShare` (0.15) déclenche le ralenti, `shockwaveDamageShare` (0.3) l'onde de choc. Un coup paré ne donne que de petites étincelles.
+- Ralenti (`fx.slowmo`) : `scale` (0.18) pendant `durationMs` (900 ms réels), retour en `rampMs` ; KO : `koScale`, `koDurationMs` ; voile sombre `veilColor` / `veilAlpha`.
+- Étincelles (`fx.sparks`), onde de choc (`fx.shockwave`), flash du touché (`fx.flash`), boule de feu (`fx.fireball`) : tailles, durées, couleurs, nombres.
+- Point d'impact : `fx.impactPullToVictim` (0 = partie qui frappe, 1 = torse de la victime).
+- Les effets sont dessinés devant les combattants et juste derrière les armes (`FX_DEPTH`, calculé dans `render/fighter-view.ts` à partir de la profondeur des armes) : un effet ne cache jamais une arme.
+- `slowmo.scale` à 1 = pas de ralenti (et pas de voile).
+- Voir la boule de feu : `?fx=fireball` dans l'adresse (une toutes les `demoRepeatMs`), ou la touche F pendant le duel.

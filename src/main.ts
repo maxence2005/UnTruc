@@ -26,6 +26,11 @@ function readFighters(): readonly [FighterSpec, FighterSpec] {
   return [arm(FIGHTERS[0], ids[0]), arm(FIGHTERS[1], ids[1])];
 }
 
+/** `?fx=fireball` : lance une boule de feu de démonstration au début du duel (touche F : une à tout moment). */
+function readDemoFireball(): boolean {
+  return new URLSearchParams(window.location.search).get('fx') === 'fireball';
+}
+
 const { arena } = DUEL_CONFIG;
 
 new Phaser.Game({
@@ -35,5 +40,5 @@ new Phaser.Game({
   height: arena.height,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'matter', matter: { autoUpdate: false, enableSleeping: false } },
-  scene: new DuelScene({ seed: readSeed(), config: DUEL_CONFIG, fighters: readFighters(), presentation: PRESENTATION }),
+  scene: new DuelScene({ seed: readSeed(), config: DUEL_CONFIG, fighters: readFighters(), presentation: PRESENTATION, demoFireball: readDemoFireball() }),
 });

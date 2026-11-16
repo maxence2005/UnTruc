@@ -55,7 +55,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 - [ ] Écran de gestion du personnage : armes et compétences lisibles en petites icônes, cosmétiques ; forme choisie parmi plusieurs prototypes
 - [ ] Compétence Transformation : le combattant devient loup-garou (griffes, queue physique)
 - [ ] Tournoi solo : enchaînement d'adversaires, récompenses entre les duels
-- [ ] Effets d'impact (étincelles, ralentis, onde de choc, boule de feu) et look des combattants de la piste 5 (yeux expressifs, tête)
+- [x] Effets d'impact (étincelles, ralentis, onde de choc, boule de feu) et look des combattants de la piste 5 (yeux expressifs, tête)
 - [ ] Système de niveaux : expérience gagnée en duel, puis choix limité entre compétences, armes, capacités ou stats
 - [ ] Choix du personnage au début : plusieurs personnages, chacun avec ses stats de départ, spécialisé sur une stat ou équilibré
 
