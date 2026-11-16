@@ -1,19 +1,26 @@
 import { msToTicks, type DuelConfig } from './duel-config';
-import type { FighterIntent } from './duel-world';
-import type { FighterSpec } from './fighter-spec';
+import type { FighterIntent, WeaponIntent } from './duel-world';
+import { resolveAttack, resolveParry, resolveStance } from './equipment';
+import type { Facing } from './facing';
+import type { AttackSpec, FighterSpec } from './fighter-spec';
 import { FighterStateMachine, type FighterState } from './fighter-state';
 import { lerpPose, type Pose } from './pose';
 import type { Reaction } from './reactions';
 import { staminaRegenPerTick, walkSpeedScale } from './stats';
 
-/** Direction du regard : 1 = vers la droite de l'écran, -1 = vers la gauche. */
-export type Facing = 1 | -1;
+export type { Facing } from './facing';
 
 /**
  * État d'un combattant pendant un duel : PV, machine à états, et les ordres
  * (pose cible, force) que la logique envoie à la physique à chaque tick.
  */
 export class Fighter {
+  /** Attaque jouée : celle de l'arme tenue, sinon les poings (`resolveAttack`). */
+  readonly attack: AttackSpec;
+  /** Posture au repos, retouchée par l'arme tenue (`resolveStance`). */
+  readonly stance: Pose;
+  /** Posture de parade (`resolveParry`) ; `null` si l'arme tenue n'a pas de garde. */
+  readonly parryPose: Pose | null;
   /** Machine à états du combattant. */
   readonly machine = new FighterStateMachine();
   /** Points de vie restants ; 0 = KO. */
@@ -39,6 +46,10 @@ export class Fighter {
   stamina: number;
   /** Mana restant (voir `spendMana`). */
   mana: number;
+  /** Regard courant, vers l'adversaire ; change par `updateFacing` (core), lu par la physique (`FighterIntent.facing`) et le rendu. */
+  facing: Facing;
+  /** Ticks consécutifs passés avec l'adversaire franchement derrière soi (voir `updateFacing`). */
+  turnTicks = 0;
   private readonly walkCycleTicks: number;
   private readonly walkSpeed: number;
   private readonly dodgeRetreatSpeed: number;
@@ -47,21 +58,30 @@ export class Fighter {
   constructor(
     readonly index: number,
     readonly spec: FighterSpec,
-    readonly facing: Facing,
+    facing: Facing,
     config: DuelConfig,
   ) {
     const { stepHz } = config;
+    this.facing = facing;
+    this.attack = resolveAttack(spec);
+    this.stance = resolveStance(spec);
+    this.parryPose = resolveParry(spec);
     this.hp = spec.stats.hp;
     this.stamina = spec.stats.stamina;
     this.mana = spec.stats.mana;
-    this.windupTicks = msToTicks(spec.attack.windupMs, stepHz);
-    this.strikeTicks = msToTicks(spec.attack.strikeMs, stepHz);
-    this.recoveryTicks = msToTicks(spec.attack.recoveryMs, stepHz);
+    this.windupTicks = msToTicks(this.attack.windupMs, stepHz);
+    this.strikeTicks = msToTicks(this.attack.strikeMs, stepHz);
+    this.recoveryTicks = msToTicks(this.attack.recoveryMs, stepHz);
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
     this.reactionTick = Math.max(1, this.windupTicks - msToTicks(config.reactions.leadMs, stepHz));
     this.walkSpeed = spec.walk.speed * walkSpeedScale(config, spec.stats);
     this.dodgeRetreatSpeed = config.reactions.dodgeRetreatSpeed;
     this.staminaRegen = staminaRegenPerTick(config, spec.stats);
+  }
+
+  /** Vrai si le combattant peut parer : aux poings, ou avec une arme qui a une garde. */
+  get canParry(): boolean {
+    return this.parryPose !== null;
   }
 
   /** Regagne un tick d'endurance, hors attaque, réaction et KO ; plafonné à la stat `stamina`. */
@@ -102,16 +122,44 @@ export class Fighter {
       strength: tuning.strength,
       support: tuning.support,
       armBoost: 1,
+      facing: this.facing,
     };
     if (this.state === 'approach') {
       intent.walkVelocity = this.facing * this.walkSpeed;
     } else if (this.state === 'dodge') {
       intent.walkVelocity = -this.facing * this.dodgeRetreatSpeed;
     } else if (this.inStrikeWindow) {
-      intent.walkVelocity = this.facing * spec.attack.lungeSpeed;
-      intent.armBoost = spec.attack.strikeArmBoost;
+      intent.walkVelocity = this.facing * this.attack.lungeSpeed;
+      intent.armBoost = this.attack.strikeArmBoost;
     }
+    if (spec.weapon !== undefined) intent.weapon = this.weaponIntent();
     return intent;
+  }
+
+  /**
+   * Ordres pour l'arme : l'angle suit les mêmes phases que la pose (repos,
+   * armement, frappe, récupération), et l'élan est donné une seule fois, au
+   * premier tick de la frappe.
+   */
+  private weaponIntent(): WeaponIntent {
+    const weapon = this.spec.weapon!;
+    const { attack } = weapon;
+    const ticks = this.machine.ticksInState;
+    const mix = (from: number, to: number, t: number) => from + (to - from) * t;
+    let angle = weapon.stanceAngle;
+    if (this.state === 'attack') {
+      angle =
+        ticks < this.windupTicks
+          ? mix(weapon.stanceAngle, attack.windupAngle, ticks / this.windupTicks)
+          : mix(attack.windupAngle, attack.strikeAngle, Math.min(1, (ticks - this.windupTicks) / this.strikeTicks));
+    } else if (this.state === 'recovery') {
+      angle = mix(attack.strikeAngle, weapon.stanceAngle, Math.min(1, ticks / this.recoveryTicks));
+    } else if (this.state === 'parry' && weapon.guard !== undefined) {
+      angle = weapon.guard.angle;
+    }
+    const kicking = this.state === 'attack' && ticks === this.windupTicks;
+    const { kick } = attack;
+    return { angle, kick: kicking ? { x: this.facing * kick.forward, y: kick.down, spin: this.facing * (kick.spin ?? 0) } : null };
   }
 
   private pose(): Pose {
@@ -119,22 +167,22 @@ export class Fighter {
     const ticks = this.machine.ticksInState;
     switch (this.state) {
       case 'idle':
-        return spec.stance;
+        return this.stance;
       case 'approach':
         return this.walkPose(ticks);
       case 'attack': {
         if (ticks < this.windupTicks) {
-          return lerpPose(spec.stance, spec.attack.windupPose, ticks / this.windupTicks);
+          return lerpPose(this.stance, this.attack.windupPose, ticks / this.windupTicks);
         }
         const t = Math.min(1, (ticks - this.windupTicks) / this.strikeTicks);
-        return lerpPose(spec.attack.windupPose, spec.attack.strikePose, t);
+        return lerpPose(this.attack.windupPose, this.attack.strikePose, t);
       }
       case 'recovery':
-        return lerpPose(spec.attack.strikePose, spec.stance, Math.min(1, ticks / this.recoveryTicks));
+        return lerpPose(this.attack.strikePose, this.stance, Math.min(1, ticks / this.recoveryTicks));
       case 'dodge':
         return spec.dodgePose;
       case 'parry':
-        return spec.parryPose;
+        return this.parryPose ?? this.stance;
       case 'stunned':
       case 'ko':
         return spec.slump;
@@ -142,7 +190,8 @@ export class Fighter {
   }
 
   private walkPose(ticks: number): Pose {
-    const { stance, walk } = this.spec;
+    const { walk } = this.spec;
+    const { stance } = this;
     const phase = (2 * Math.PI * ticks) / this.walkCycleTicks;
     const swing = Math.sin(phase) * walk.hipSwing;
     return {

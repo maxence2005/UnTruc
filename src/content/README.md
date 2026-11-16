@@ -28,6 +28,10 @@ Aucune valeur d'équilibrage ne vit dans la logique : tout se règle ici.
   - Facteur de dégâts selon la vitesse d'impact : `damage.referenceSpeed` (px par pas, donne le dégât de base), borné par `damage.minFactor` et `damage.maxFactor`.
   - Formules des stats (`stats`) : `referencePhysicalPower` (10, puissance qui donne les dégâts de base), `referenceWeight` (70, poids qui donne la masse de base), `minMassScale` (0.5) et `maxMassScale` (3) bornent `weight / referenceWeight` (masse et étourdissement), `minStunMs` (100) et `maxStunMs` (600) bornent la durée d'étourdissement.
   - Vitesse minimale d'un contact pour compter comme un coup : `minHitSpeed`.
+  - Retournement (`facing`) : `turnMargin` (20 px) : écart entre bassins en deçà duquel le côté de l'adversaire est jugé incertain (pas de demi-tour quand ils se superposent) ; `turnDelayMs` (150 ms) : temps pendant lequel l'adversaire doit rester franchement derrière avant le demi-tour (jamais au milieu d'une attaque).
+- **Une arme** : un fichier par arme dans `weapons/` (voir `weapons/README.md`).
+  - `maxSpeed` (px par pas, facultatif ; marteau 14) : plafond de vitesse de l'arme, appliqué après l'élan. Une arme trop rapide s'enfonce dans la victime en un pas et la correction de position de Matter la projette.
+  - `wrist.reaction` (vrai pour l'épée et le marteau) : le poignet rend sa poussée à tout le combattant, qui ne se déplace pas par ce muscle seul. À laisser vrai pour toute arme lourde : sans ça, faire tourner le marteau (près de la moitié de la masse du porteur) propulse le combattant en l'air. L'élan (`attack.kick`) n'est pas compensé. Le même champ existe pour les muscles du corps (`muscles.*.reaction`), non utilisé.
   - Seed par défaut : `seedDefault` (l'URL peut la remplacer avec `?seed=123`).
 - **Le look d'un combattant** (story 010) : champ `look` de chaque entrée de `FIGHTERS` (`fighters.ts`).
   - `eyes` : `round`, `angry` ou `thin` ; `mouth` : `grr`, `smile`, `o` ou `teeth` ; `hair` : `bald`, `spikes`, `bowl`, `mohawk`, `long` ou `bun` ; `beard` : vrai ou faux.

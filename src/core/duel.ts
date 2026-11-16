@@ -1,12 +1,14 @@
 import type { DuelConfig } from './duel-config';
 import { assertDuelConfig, msToTicks } from './duel-config';
-import type { BodyPartName, ContactReport, DuelWorld } from './duel-world';
+import type { ContactPartName, ContactReport, DuelWorld } from './duel-world';
 import { EventBus } from './events';
+import { updateFacing } from './facing';
 import { Fighter } from './fighter';
 import type { FighterSpec } from './fighter-spec';
 import { canReact, initiativeWinner, passes, rollReaction } from './reactions';
 import type { Rng } from './rng';
-import { actionDelayScale, hitDamage, knockbackSpeed, stunTicksFor } from './stats';
+import { actionDelayScale, hitDamage, knockbackSpeed } from './stats';
+import { endStuns, stunVictim } from './stun';
 
 /** Phase globale du duel : en cours, KO prononcé (la physique finit de tomber), figé. */
 export type DuelPhase = 'running' | 'ending' | 'over';
@@ -17,7 +19,7 @@ type AttackKind = 'attack' | 'counter' | 'combo';
 /** Un coup repéré pendant un tick, avant d'être appliqué. */
 interface PendingHit {
   attacker: Fighter;
-  part: BodyPartName;
+  part: ContactPartName;
   impactSpeed: number;
 }
 
@@ -75,7 +77,8 @@ export class Duel {
     }
     for (const fighter of this.fighters) fighter.machine.tick();
     if (this.phase === 'running') {
-      this.endStuns();
+      endStuns(this.fighters);
+      this.updateFacings(world);
       for (const fighter of this.fighters) fighter.recoverStamina();
       this.settleInitiative(world);
       for (const fighter of this.fighters) this.act(fighter, world);
@@ -93,9 +96,16 @@ export class Duel {
     const [first, second] = this.fighters;
     const ready = (fighter: Fighter) => (fighter.state === 'idle' || fighter.state === 'approach') && fighter.actionTicksLeft <= 1;
     if (!ready(first) || !ready(second)) return;
-    if (this.distance(world) > Math.min(first.spec.attack.reach, second.spec.attack.reach)) return;
+    if (this.distance(world) > Math.min(first.attack.reach, second.attack.reach)) return;
     const winner = this.fighters[initiativeWinner([first.spec.stats.speed, second.spec.stats.speed], this.rng)];
     this.opponentOf(winner).actionTicksLeft = winner.windupTicks + winner.strikeTicks + 1;
+  }
+
+  /** Chaque combattant se tourne vers l'adversaire (voir `updateFacing`). */
+  private updateFacings(world: DuelWorld): void {
+    for (const fighter of this.fighters) {
+      updateFacing(fighter, world.fighterX(fighter.index), world.fighterX(1 - fighter.index), this.config.facing, this.config.stepHz);
+    }
   }
 
   private opponentOf(fighter: Fighter): Fighter {
@@ -124,8 +134,8 @@ export class Duel {
     this.endIfKo();
   }
 
-  private strikingPartOf(contact: ContactReport, attacker: Fighter): BodyPartName | null {
-    const strikingParts = attacker.spec.attack.strikingParts;
+  private strikingPartOf(contact: ContactReport, attacker: Fighter): ContactPartName | null {
+    const strikingParts = attacker.attack.strikingParts;
     if (contact.fighterA === attacker.index && strikingParts.includes(contact.partA)) return contact.partA;
     if (contact.fighterB === attacker.index && strikingParts.includes(contact.partB)) return contact.partB;
     return null;
@@ -135,7 +145,7 @@ export class Duel {
   private applyHit({ attacker, part, impactSpeed }: PendingHit, victim: Fighter, world: DuelWorld): void {
     const parried = victim.state === 'parry';
     const factor = parried ? this.config.reactions.parryFactor : 1;
-    const damage = Math.round(hitDamage(this.config, attacker.spec.attack.damage, impactSpeed, attacker.spec.stats) * factor);
+    const damage = Math.round(hitDamage(this.config, attacker.attack.damage, impactSpeed, attacker.spec.stats) * factor);
     attacker.hasHit = true;
     victim.hp = Math.max(0, victim.hp - damage);
     this.events.emit('hit', {
@@ -149,22 +159,7 @@ export class Duel {
     });
     const recoil = knockbackSpeed(this.config, impactSpeed, attacker.spec.stats, victim.spec.stats) * factor;
     world.impulse(victim.index, attacker.facing * recoil, -recoil * this.config.stats.knockbackLift);
-    if (victim.hp > 0 && !parried) this.stun(victim, impactSpeed);
-  }
-
-  /**
-   * Sonne la victime. Déjà sonnée, elle le reste le plus long de ce qui lui restait et du
-   * nouveau coup, sans que la série dépasse `maxStunSeriesMs` ; la série finit quand elle quitte `stunned`.
-   */
-  private stun(victim: Fighter, impactSpeed: number): void {
-    const { stats, stepHz } = this.config;
-    const elapsed = victim.state === 'stunned' ? victim.machine.ticksInState : 0;
-    const remaining = victim.state === 'stunned' ? victim.stunTicks - elapsed : 0;
-    victim.stunSeriesTicks = victim.state === 'stunned' ? victim.stunSeriesTicks + elapsed : 0;
-    const ticksLeft = msToTicks(stats.maxStunSeriesMs, stepHz) - victim.stunSeriesTicks;
-    const wanted = Math.max(remaining, stunTicksFor(this.config, victim.spec.stunMs, impactSpeed, victim.spec.stats));
-    victim.stunTicks = Math.min(wanted, ticksLeft);
-    victim.machine.transition('stunned');
+    if (victim.hp > 0 && !parried) stunVictim(this.config, victim, impactSpeed);
   }
 
   /** Termine le duel si au moins un combattant est à 0 PV : KO, vainqueur ou égalité. */
@@ -182,14 +177,6 @@ export class Duel {
       winner.machine.transition(winner.state === 'attack' ? 'recovery' : 'idle');
     }
     this.events.emit('duelEnd', { tick: this.tick, winner: this.winner });
-  }
-
-  private endStuns(): void {
-    for (const fighter of this.fighters) {
-      if (fighter.state === 'stunned' && fighter.machine.ticksInState >= fighter.stunTicks) {
-        fighter.machine.transition('idle');
-      }
-    }
   }
 
   /** Décision d'un combattant sur ce tick, selon son état. */
@@ -222,7 +209,7 @@ export class Duel {
   private actFree(fighter: Fighter, world: DuelWorld): void {
     fighter.actionTicksLeft = Math.max(0, fighter.actionTicksLeft - 1);
     const ready = fighter.actionTicksLeft === 0;
-    const { reach } = fighter.spec.attack;
+    const { reach } = fighter.attack;
     const distance = this.distance(world);
     if (distance <= reach) {
       if (ready) this.startAttack(fighter, 'attack');
@@ -238,7 +225,7 @@ export class Duel {
 
   /** Vrai si l'adversaire est encore assez près pour un coup lancé sans marcher (contre, enchaînement). */
   private inFollowUpReach(fighter: Fighter, world: DuelWorld): boolean {
-    return this.distance(world) <= fighter.spec.attack.reach + this.config.action.approachResumeMargin;
+    return this.distance(world) <= fighter.attack.reach + this.config.action.approachResumeMargin;
   }
 
   /**

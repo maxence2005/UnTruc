@@ -9,6 +9,8 @@ export type Reaction = 'none' | 'dodge' | 'parry';
 export interface Reactor {
   readonly state: FighterState;
   readonly stamina: number;
+  /** Faux si l'arme tenue n'a pas de garde (voir `WeaponSpec.guard`) : pas de parade. */
+  readonly canParry: boolean;
   readonly spec: { readonly stats: { readonly agility: number } };
 }
 
@@ -29,12 +31,13 @@ export function passes(fighter: Reactor, chance: ChanceConfig, cost: number, rng
 
 /**
  * Décide la réaction du défenseur à une attaque qui commence : esquive d'abord,
- * parade si l'esquive échoue, sinon rien. Un défenseur hors d'état de réagir ne tire rien.
+ * parade si l'esquive échoue et que le défenseur peut parer, sinon rien. Un défenseur
+ * hors d'état de réagir ne tire rien ; un défenseur qui ne peut pas parer ne tire pas la parade.
  */
 export function rollReaction(config: ReactionsConfig, defender: Reactor, rng: Rng): Reaction {
   if (!canReact(defender.state)) return 'none';
   if (passes(defender, config.dodgeChance, config.staminaCost.dodge, rng)) return 'dodge';
-  if (passes(defender, config.parryChance, config.staminaCost.parry, rng)) return 'parry';
+  if (defender.canParry && passes(defender, config.parryChance, config.staminaCost.parry, rng)) return 'parry';
   return 'none';
 }
 

@@ -17,7 +17,9 @@ export interface DuelDebugInfo {
   /** Index (0 ou 1) du vainqueur, `null` tant qu'il n'y en a pas. */
   readonly winner: number | null;
   readonly hp: readonly [number, number];
-  /** Empreinte de tout l'état (ticks, PV, états, physique) : deux duels identiques donnent la même. */
+  /** Regard courant de chaque combattant (1 = vers la droite, -1 = vers la gauche). */
+  readonly facing: readonly [number, number];
+  /** Empreinte de tout l'état (ticks, PV, états, regard, physique) : deux duels identiques donnent la même. */
   readonly stateHash: string;
 }
 
@@ -50,6 +52,8 @@ export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld)
         fighter.comboHits,
         fighter.stunSeriesTicks,
         REACTIONS.indexOf(fighter.plannedReaction),
+        fighter.facing,
+        fighter.turnTicks,
       ]);
       return Object.freeze({
         seed,
@@ -57,6 +61,7 @@ export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld)
         over: duel.phase === 'over',
         winner: duel.winner,
         hp: Object.freeze([first.hp, second.hp] as const),
+        facing: Object.freeze([first.facing, second.facing] as const),
         stateHash: hashNumbers([duel.tick, first.hp, second.hp, ...stateCodes, ...world.snapshot()]),
       });
     },

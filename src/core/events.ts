@@ -1,10 +1,10 @@
-import type { BodyPartName } from './duel-world';
+import type { ContactPartName } from './duel-world';
 
 /** Événements émis par le duel. Rendu, UI et effets s'y abonnent ; la logique ne les appelle jamais. */
 export interface DuelEvents {
   attackStart: { tick: number; fighter: number };
   /** `parried` : le coup a été paré (dégâts réduits, pas d'étourdissement). */
-  hit: { tick: number; attacker: number; victim: number; part: BodyPartName; damage: number; hpLeft: number; parried: boolean };
+  hit: { tick: number; attacker: number; victim: number; part: ContactPartName; damage: number; hpLeft: number; parried: boolean };
   /** Le défenseur esquive l'attaque en cours de `attacker` : elle ne lui fera aucun dégât. */
   dodge: { tick: number; defender: number; attacker: number; staminaLeft: number };
   /** Le défenseur se met en garde contre l'attaque en cours de `attacker`. */

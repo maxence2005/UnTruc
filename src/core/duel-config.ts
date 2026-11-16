@@ -1,3 +1,5 @@
+import type { FacingConfig } from './facing';
+
 /** Réglages de la physique Matter (hors corps des combattants). */
 export interface PhysicsTuning {
   gravityY: number;
@@ -164,6 +166,8 @@ export interface DuelConfig {
   damage: DamageConfig;
   stats: StatsConfig;
   reactions: ReactionsConfig;
+  /** Retournement vers l'adversaire (story 002). */
+  facing: FacingConfig;
   physics: PhysicsTuning;
 }
 
@@ -183,6 +187,9 @@ export function assertDuelConfig(config: DuelConfig): void {
     'stats.minWalkScale': config.stats.minWalkScale,
     'reactions.maxComboHits': config.reactions.maxComboHits,
   };
+  if (!(config.facing.turnMargin >= 0) || !(config.facing.turnDelayMs >= 0)) {
+    throw new Error('Config du duel invalide : facing.turnMargin et facing.turnDelayMs doivent être positifs ou nuls.');
+  }
   for (const [name, value] of Object.entries(positives)) {
     if (!(value > 0)) throw new Error(`Config du duel invalide : ${name} doit être strictement positif (reçu ${value}).`);
   }

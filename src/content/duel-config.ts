@@ -58,6 +58,10 @@ export const DUEL_CONFIG: DuelConfig = {
     maxComboHits: 3,
     staminaCost: { attack: 6, dodge: 12, parry: 8, counter: 8, combo: 10 },
   },
+  facing: {
+    turnMargin: 20,
+    turnDelayMs: 150,
+  },
   physics: {
     gravityY: 1,
     positionIterations: 8,

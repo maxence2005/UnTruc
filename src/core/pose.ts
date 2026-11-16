@@ -25,6 +25,14 @@ export interface Pose {
   crouch: number;
 }
 
+/** Retouche d'une pose : seuls les angles donnés remplacent ceux de la pose de base (voir `applyPatch`). */
+export type PosePatch = Partial<Pose>;
+
+/** Pose de base dont les angles de `patch` prennent la place. */
+export function applyPatch(base: Pose, patch: PosePatch): Pose {
+  return { ...base, ...patch };
+}
+
 /** Interpolation linéaire entre deux poses (t dans [0, 1]). */
 export function lerpPose(from: Pose, to: Pose, t: number): Pose {
   const mix = (a: number, b: number): number => a + (b - a) * t;

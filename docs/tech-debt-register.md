@@ -1,8 +1,8 @@
 ## Technical Debt Register
 
-Last updated: 2026-11-14
+Last updated: 2026-11-16
 
-Total items: 4 | Estimated total effort: S + S + M + S
+Total items: 7 | Estimated total effort: S + S + M + S + S + S + S
 
 | ID | Category | Description | Files | Effort | Impact | Priority | Status | Added | Sprint |
 |----|----------|-------------|-------|--------|--------|----------|--------|-------|--------|
@@ -10,3 +10,6 @@ Total items: 4 | Estimated total effort: S + S + M + S
 | TD-002 | Performance | Petites allocations à chaque image : tableau de contacts par pas, objet `PartTransform` par partie et par image, redessin du HUD même sans changement de PV ; à traiter si une mesure montre un problème — from production/epics/untruc/story-001-moteur-duel-ragdoll.md | src/physics/matter-duel-world.ts, src/render/fighter-view.ts, src/ui/duel-hud.ts | S | Low | — | Open | 2026-11-10 | Backlog |
 | TD-003 | Performance | Pas d'interpolation du rendu entre deux pas de simulation : saccades possibles sur un écran à 144 Hz (signalé par la relecture, non vérifié) — from production/epics/untruc/story-001-moteur-duel-ragdoll.md | src/scenes/duel-scene.ts, src/render/fighter-view.ts | S | Low | — | Open | 2026-11-10 | Backlog |
 | TD-004 | Performance | Les têtes (une quinzaine de pièces, plus leurs contours) sont redessinées à chaque image : Phaser rejoue tout le tampon de commandes d'un `Graphics` ; sans doute négligeable à deux combattants, à figer en texture (`generateTexture`) si une mesure le demande — from production/epics/untruc/story-010-look-combattants-piste-5.md | src/render/fighter-view.ts, src/render/face-drawing.ts | S | Low | — | Open | 2026-11-14 | Backlog |
+| TD-005 | Architecture | Cycle de types entre `fighter-spec.ts` et `weapon-spec.ts` (`WeaponAttackSpec extends Omit<AttackSpec>`, `WeaponSpec.wrist: MuscleGain` vivent dans `fighter-spec.ts`), et `MuscleGain.reaction` (détail de la physique de l'arme) logé dans le type générique des muscles ; inoffensif (types seulement), à ranger en sortant `AttackSpec` et `MuscleGain` dans un module feuille — from production/epics/untruc/story-002-armes-physiques.md | src/core/fighter-spec.ts, src/core/weapon-spec.ts | S | Low | — | Open | 2026-11-16 | Backlog |
+| TD-006 | Code Quality | `buildRagdoll` fait 98 lignes pour une limite de 40 par méthode (antérieur à la story 002, relevé par la revue) ; à découper en construction du torse, des bras et des jambes — from production/epics/untruc/story-002-armes-physiques.md | src/physics/ragdoll.ts | S | Low | — | Open | 2026-11-16 | Backlog |
+| TD-007 | Architecture | La vitesse d'impact d'un coup d'arme est celle du centre de l'arme, pas celle du point de contact : un coup de pointe d'épée est sous-estimé quand l'arme tourne ; changement d'équilibrage (les coups de pointe feraient plus de dégâts), refusé par Maxence le 2026-11-16, à reprendre avec l'équilibrage des armes (story 006) — from production/epics/untruc/story-002-armes-physiques.md | src/physics/matter-duel-world.ts | S | Low | — | Open | 2026-11-16 | Backlog |

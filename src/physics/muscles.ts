@@ -23,23 +23,22 @@ function pdAngularVelocity(bone: MatterJS.BodyType, targetAngle: number, gain: M
 }
 
 /**
- * Muscle d'une articulation. Avec `pivotAtJoint`, l'os tourne autour de son point
- * d'attache et non autour de son centre : sans ça, la contrainte Matter annule une
- * bonne part de la rotation à chaque pas et un bras n'arrive jamais à l'horizontale.
+ * Muscle d'un os (voir `Anchor` : `pinX`/`pinY` est son point d'attache, en repère de l'os). Avec
+ * `pivotAtJoint`, l'os tourne autour de ce point et non autour de son centre : sans ça, la
+ * contrainte Matter annule une bonne part de la rotation à chaque pas et un bras n'arrive
+ * jamais à l'horizontale. Sert aux os du corps et à l'arme tenue.
  */
-function driveJoint(
+export function driveBone(
   matter: Matter,
-  ragdoll: Ragdoll,
-  part: AnchoredPart,
+  bone: MatterJS.BodyType,
+  parent: MatterJS.BodyType,
+  anchor: { pinX: number; pinY: number },
   targetAngle: number,
   gain: MuscleGain,
   strength: number,
   boost: number,
 ): void {
   if (strength <= 0) return;
-  const bone = ragdoll.parts[part];
-  const anchor = ragdoll.anchors[part];
-  const parent = ragdoll.parts[anchor.parent];
   const omega = pdAngularVelocity(bone, targetAngle, gain, strength, boost);
   matter.body.setAngularVelocity(bone, omega);
   if (!gain.pivotAtJoint) return;
@@ -56,10 +55,55 @@ function driveJoint(
   });
 }
 
+/** Angle d'un os qui pointe de `from` vers `to` (0 = os pendant vers le bas, comme les parties du ragdoll). */
+function boneAngle(from: { x: number; y: number }, to: { x: number; y: number }): number {
+  return Math.atan2(-(to.x - from.x), to.y - from.y);
+}
+
+/**
+ * Angles d'un bras à deux os (épaule, coude) qui amènent la main sur `target` : la
+ * cinématique inverse à deux segments, coude vers le bas. Une cible hors de portée
+ * donne le bras tendu dans sa direction.
+ */
+export function reachAngles(
+  shoulder: { x: number; y: number },
+  target: { x: number; y: number },
+  upperLength: number,
+  foreLength: number,
+): { upper: number; fore: number } {
+  const distance = Math.min(Math.hypot(target.x - shoulder.x, target.y - shoulder.y), upperLength + foreLength);
+  const toTarget = boneAngle(shoulder, target);
+  const cosBend = (upperLength * upperLength + distance * distance - foreLength * foreLength) / (2 * upperLength * Math.max(distance, Number.EPSILON));
+  const bend = Math.acos(clamp(cosBend, -1, 1));
+  const elbowAt = (upper: number) => ({ x: shoulder.x - Math.sin(upper) * upperLength, y: shoulder.y + Math.cos(upper) * upperLength });
+  const [first, second] = [toTarget + bend, toTarget - bend];
+  const upper = elbowAt(first).y >= elbowAt(second).y ? first : second;
+  return { upper, fore: boneAngle(elbowAt(upper), target) };
+}
+
+function driveJoint(
+  matter: Matter,
+  ragdoll: Ragdoll,
+  part: AnchoredPart,
+  targetAngle: number,
+  gain: MuscleGain,
+  strength: number,
+  boost: number,
+): void {
+  const anchor = ragdoll.anchors[part];
+  driveBone(matter, ragdoll.parts[part], ragdoll.parts[anchor.parent], anchor, targetAngle, gain, strength, boost);
+}
+
 /**
  * Applique les ordres de la logique à un ragdoll : angles cibles des
  * articulations (en repère combattant, voir `Pose`), puis maintien debout et
- * marche sur le bassin tant que les pieds touchent le sol.
+ * marche sur le bassin tant que les pieds touchent le sol. Le sens des angles
+ * suit le regard courant (`intent.facing`) : un combattant retourné vise les
+ * angles miroirs avec les mêmes os, ses ancres gardant leur place (écart de
+ * quelques px seulement, `shoulderOffsetX` et `hipOffsetX`).
+ * `backHandTarget` : la main arrière tient une arme à deux mains ; son bras ne vise pas
+ * sa pose mais va chercher ce point du manche (voir `reachAngles`), sinon il tirerait
+ * l'arme hors de la main avant.
  */
 export function applyIntent(
   matter: Matter,
@@ -69,9 +113,10 @@ export function applyIntent(
   body: BodySpec,
   tuning: PhysicsTuning,
   groundY: number,
+  backHandTarget?: { x: number; y: number },
 ): void {
-  const { parts, facing } = ragdoll;
-  const { pose, strength, armBoost } = intent;
+  const { parts } = ragdoll;
+  const { pose, strength, armBoost, facing } = intent;
   const forward = -facing;
   if (strength > 0) {
     matter.body.setAngularVelocity(parts.torso, pdAngularVelocity(parts.torso, facing * pose.lean, muscles.torso, strength, 1));
@@ -82,8 +127,17 @@ export function applyIntent(
   joint('head', parts.torso.angle + facing * pose.head, muscles.head, 1);
   joint('upperArmFront', parts.torso.angle + forward * pose.shoulderFront, muscles.arm, armBoost);
   joint('foreArmFront', parts.upperArmFront.angle + forward * pose.elbowFront, muscles.arm, armBoost);
-  joint('upperArmBack', parts.torso.angle + forward * pose.shoulderBack, muscles.arm, 1);
-  joint('foreArmBack', parts.upperArmBack.angle + forward * pose.elbowBack, muscles.arm, 1);
+  if (backHandTarget === undefined) {
+    joint('upperArmBack', parts.torso.angle + forward * pose.shoulderBack, muscles.arm, 1);
+    joint('foreArmBack', parts.upperArmBack.angle + forward * pose.elbowBack, muscles.arm, 1);
+  } else {
+    const upper = parts.upperArmBack;
+    const half = body.upperArm / 2;
+    const shoulder = { x: upper.position.x + Math.sin(upper.angle) * half, y: upper.position.y - Math.cos(upper.angle) * half };
+    const reach = reachAngles(shoulder, backHandTarget, body.upperArm, body.foreArm);
+    joint('upperArmBack', reach.upper, muscles.arm, 1);
+    joint('foreArmBack', reach.fore, muscles.arm, 1);
+  }
   joint('thighFront', forward * pose.hipFront, muscles.leg, 1);
   joint('shinFront', parts.thighFront.angle + facing * pose.kneeFront, muscles.leg, 1);
   joint('thighBack', forward * pose.hipBack, muscles.leg, 1);

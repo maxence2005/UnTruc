@@ -17,7 +17,13 @@ export type AnchoredPart = Exclude<BodyPartName, 'torso'>;
 export interface Ragdoll {
   parts: Record<BodyPartName, MatterJS.BodyType>;
   anchors: Record<AnchoredPart, Anchor>;
-  facing: Facing;
+  /**
+   * Regard à la construction : il place les ancres d'épaule et de hanche avant/arrière, qui
+   * gardent ensuite leur côté physique. Le regard courant vient de `FighterIntent.facing`.
+   */
+  builtFacing: Facing;
+  /** Groupe de collision (négatif) du corps : l'arme tenue le partage pour ne pas heurter son porteur. */
+  group: number;
   /** Hauteur du centre du torse quand le combattant se tient debout, jambes tendues. */
   standTorsoY: number;
 }
@@ -99,7 +105,8 @@ export function buildRagdoll(
   const legBack = leg('Back');
 
   return {
-    facing,
+    builtFacing: facing,
+    group,
     standTorsoY: torsoY,
     anchors: {
       head: { parent: 'torso', pinX: 0, pinY: neckToHead },

@@ -50,7 +50,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 
 ## Features
 - [x] Moteur de duel ragdoll (muscles PD, chaque combattant agit à son propre rythme, sans tour par tour) propre, rejouable à seed fixe ; stats du combattant ; duel rapide qui part dans tous les sens : esquive, parade, contre-attaque, enchaînements, pilotés par les stats
-- [ ] Armes physiques en données : prise à une ou deux mains, attaque propre à chaque arme
+- [x] Armes physiques en données : prise à une ou deux mains, attaque propre à chaque arme
 - [ ] Compétences lisibles : ciblage visible, raison affichée quand un coup est bloqué ou raté
 - [ ] Écran de gestion du personnage : armes et compétences lisibles en petites icônes, cosmétiques ; forme choisie parmi plusieurs prototypes
 - [ ] Compétence Transformation : le combattant devient loup-garou (griffes, queue physique)

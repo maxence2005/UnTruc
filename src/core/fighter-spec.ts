@@ -1,7 +1,8 @@
-import type { BodyPartName } from './duel-world';
+import type { ContactPartName } from './duel-world';
 import type { FighterState } from './fighter-state';
 import type { Pose } from './pose';
 import type { FighterStats } from './stats';
+import type { WeaponSpec } from './weapon-spec';
 
 /**
  * Dimensions et matière du corps, en pixels. Les longueurs de membres vont
@@ -47,6 +48,13 @@ export interface MuscleGain {
   kp: number;
   kd: number;
   pivotAtJoint: boolean;
+  /**
+   * Le muscle rend sa poussée au reste du corps : la quantité de mouvement qu'il donne à
+   * l'os est retirée à parts égales de vitesse à tout le combattant, qui ne se déplace pas
+   * par ce muscle seul. Indispensable pour une pièce lourde (le marteau pèse près de la
+   * moitié du porteur) : sans ça, son muscle propulse le combattant en l'air. Absent = faux.
+   */
+  reaction?: boolean;
 }
 
 /** Muscles par groupe d'articulations. */
@@ -84,7 +92,7 @@ export interface AttackSpec {
   strikeArmBoost: number;
   /** Dégât de base d'un coup, avant le facteur de vitesse d'impact (`DamageConfig`). */
   damage: number;
-  strikingParts: readonly BodyPartName[];
+  strikingParts: readonly ContactPartName[];
 }
 
 /** Force des muscles et du maintien debout selon l'état du combattant. */
@@ -180,7 +188,10 @@ export interface FighterSpec {
   /** Garde de parade : pose tenue pendant que le coup adverse arrive. */
   parryPose: Pose;
   walk: WalkSpec;
+  /** Attaque à mains nues ; remplacée par celle de `weapon` quand il en tient une (voir `resolveAttack`). */
   attack: AttackSpec;
+  /** Arme tenue, retrouvée dans le registre des armes ; absent = poings. */
+  weapon?: WeaponSpec;
   /** Étourdissement de base d'un coup d'impact de référence sur un poids de référence, avant bornes (voir `StatsConfig`). */
   stunMs: number;
   stateTuning: Readonly<Record<FighterState, StateTuning>>;
