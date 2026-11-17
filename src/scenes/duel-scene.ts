@@ -11,6 +11,7 @@ import { drawArena } from '../render/arena-view';
 import { FighterView } from '../render/fighter-view';
 import { ImpactFx } from '../render/fx/impact-fx';
 import { SkillFx } from '../render/skill-fx';
+import { StatusFx } from '../render/status-fx';
 import { DuelHud } from '../ui/duel-hud';
 
 /**
@@ -42,6 +43,7 @@ export class DuelScene extends Phaser.Scene {
   private hud!: DuelHud;
   private fx!: ImpactFx;
   private skillFx!: SkillFx;
+  private statusFx!: StatusFx;
   private readonly onFireballKey = (): void => this.fx.launchDemoFireball();
   private accumulatorMs = 0;
   /** Sonde de debug des armes, appelée après chaque pas quand un combattant est armé. */
@@ -69,14 +71,16 @@ export class DuelScene extends Phaser.Scene {
     );
     this.fx = new ImpactFx(this, this.duel.events, this.world, this.views, (fighter) => this.duel.fighters[fighter].spec.stats.hp, config.arena, presentation.fx);
     this.skillFx = new SkillFx(this, this.duel.events, this.world, this.fx, config.arena, () => this.duel.skills.projectiles, presentation);
+    this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
+    this.statusFx = new StatusFx(this, this.duel.events, this.world, this.fx, config.arena, presentation.statuses, presentation.fx.seed, this.hud);
     if (this.setup.demoFireball === true) this.fx.scheduleDemoFireball();
     this.input.keyboard?.on('keydown-F', this.onFireballKey);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.fx.destroy();
       this.skillFx.destroy();
+      this.statusFx.destroy();
       this.input.keyboard?.off('keydown-F', this.onFireballKey);
     });
-    this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
     installDuelDebugHook(seed, this.duel, this.world);
     const armed = fighters.some((fighter) => fighter.weapon !== undefined);
     this.probe = armed ? installWeaponProbe(this.duel, this.world, { flightY: config.arena.height * PROBE_FLIGHT_SHARE, flightGraceTicks: PROBE_FLIGHT_GRACE_TICKS }) : null;
@@ -95,6 +99,7 @@ export class DuelScene extends Phaser.Scene {
     }
     this.fx.update(realMs);
     this.skillFx.update(realMs);
+    this.statusFx.update(realMs);
     for (const view of this.views) view.update();
     this.hud.update();
   }

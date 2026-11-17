@@ -195,7 +195,7 @@ export class SkillSystem {
     this.remove(projectile, 'hit');
     const damage = skillDamage(config, skill.hit, owner.spec.stats, spec.speed);
     const point = { x: projectile.x, y: projectile.y };
-    const hit: PendingHit = { attacker: owner, part: spec.spawnPart, impactSpeed: spec.speed, damage, skill: skill.id, point, parryable: skill.reactions.parryable, ranged: true };
+    const hit: PendingHit = { attacker: owner, part: spec.spawnPart, impactSpeed: spec.speed, damage, skill: skill.id, point, parryable: skill.reactions.parryable, ranged: true, applies: skill.hit.applies };
     this.host.applyHit(hit, victim, world);
     this.host.endIfKo();
     return true;

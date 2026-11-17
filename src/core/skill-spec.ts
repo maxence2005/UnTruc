@@ -2,6 +2,7 @@ import type { DuelConfig } from './duel-config';
 import type { BodyPartName, ContactPartName } from './duel-world';
 import type { PosePatch } from './pose';
 import { hitDamage, type FighterStats } from './stats';
+import { assertStatusApplications, type StatusApplication } from './status-spec';
 
 /** Catégories de compétences, dans l'ordre d'affichage. Pour en ajouter une : l'ajouter ici, puis ses libellés dans `content/presentation.ts`. */
 export const SKILL_CATEGORIES = ['attack', 'magic', 'transformation'] as const;
@@ -41,6 +42,8 @@ export interface SkillHit {
   scaling: SkillScaling;
   /** Parties dont le contact compte comme un coup pendant une phase à `strikeWindow` ; vide pour un projectile seul. */
   strikingParts: readonly ContactPartName[];
+  /** Statuts appliqués à la victime par un coup qui passe (story 013), ex. `[{ status: BLEED, charges: 1 }]`. */
+  applies?: readonly StatusApplication[];
 }
 
 /**
@@ -178,4 +181,5 @@ export function assertSkillSpec(spec: SkillSpec): void {
   if (!strikes && projectiles === 0) fail(id, 'aucune fenêtre de coup ni projectile : elle ne touche jamais');
   if (strikes && hit.strikingParts.length === 0) fail(id, 'hit.strikingParts est vide alors qu\'une phase frappe');
   if (projectiles > 1) fail(id, 'un seul projectile par compétence');
+  if (hit.applies !== undefined) assertStatusApplications(`Compétence ${id}`, hit.applies);
 }

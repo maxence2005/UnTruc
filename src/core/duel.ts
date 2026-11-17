@@ -5,12 +5,13 @@ import { EventBus } from './events';
 import { updateFacing } from './facing';
 import { Fighter } from './fighter';
 import type { FighterSpec } from './fighter-spec';
-import { contactHit, emitNoDamage, reportMissedAttack, strikingPartOf, type PendingHit } from './hit';
+import { contactHit, emitHit, emitNoDamage, reportMissedAttack, strikingPartOf, type PendingHit } from './hit';
 import { canReact, initiativeWinner, passes, rollReaction, type Reaction } from './reactions';
 import type { Rng } from './rng';
 import { SkillSystem } from './skill-system';
+import { StatusSystem } from './status-system';
 import { actionDelayScale, knockbackSpeed } from './stats';
-import { endStuns, stunVictim } from './stun';
+import { endStuns, shakeVictim } from './stun';
 
 /** Phase globale du duel : en cours, KO prononcé (la physique finit de tomber), figé. */
 export type DuelPhase = 'running' | 'ending' | 'over';
@@ -46,6 +47,8 @@ export class Duel {
 
   /** Moteur des compétences (inactif quand aucun combattant n'en a). */
   readonly skills: SkillSystem;
+  /** Statuts de combat (story 013) : saignement, etc. */
+  readonly statuses: StatusSystem;
   private settleTicksLeft: number;
 
   constructor(
@@ -70,6 +73,7 @@ export class Duel {
       applyHit: this.applyHit.bind(this), playReaction: this.playReaction.bind(this),
       endIfKo: this.endIfKo.bind(this), drawActionDelay: this.drawActionDelay.bind(this),
     });
+    this.statuses = new StatusSystem({ config, events: this.events, fighters: this.fighters, tick: () => this.tick });
   }
 
   /** Un tick fixe : logique du duel, ordres aux muscles, puis un pas de physique. */
@@ -79,6 +83,7 @@ export class Duel {
     if (this.phase === 'running') {
       this.resolveContacts(contacts, world);
       if (this.phase === 'running') this.skills.stepProjectiles(world);
+      if (this.phase === 'running') this.tickStatuses(world);
     }
     for (const fighter of this.fighters) fighter.machine.tick();
     if (this.phase === 'running') {
@@ -105,6 +110,12 @@ export class Duel {
     if (this.distance(world) > Math.min(first.attack.reach, second.attack.reach)) return;
     const winner = this.fighters[initiativeWinner([first.spec.stats.speed, second.spec.stats.speed], this.rng)];
     this.opponentOf(winner).actionTicksLeft = winner.windupTicks + winner.strikeTicks + 1;
+  }
+
+  /** Statuts du tick ; un saignement qui vide les PV passe par le KO commun. */
+  private tickStatuses(world: DuelWorld): void {
+    this.statuses.tick(world);
+    this.endIfKo();
   }
 
   private opponentOf(fighter: Fighter): Fighter {
@@ -134,30 +145,20 @@ export class Duel {
   }
 
   /** Dégâts, recul et étourdissement d'un coup ; un coup paré est réduit par `parryFactor` et ne sonne pas. */
-  private applyHit({ attacker, part, impactSpeed, damage: baseDamage, skill, point, parryable, ranged }: PendingHit, victim: Fighter, world: DuelWorld): void {
-    const parried = victim.state === 'parry' && parryable !== false;
+  private applyHit(hit: PendingHit, victim: Fighter, world: DuelWorld): void {
+    const { attacker, impactSpeed } = hit;
+    const parried = victim.state === 'parry' && hit.parryable !== false;
     const factor = parried ? this.config.reactions.parryFactor : 1;
-    const damage = Math.round(baseDamage * factor);
-    if (ranged !== true) attacker.hasHit = true;
+    const damage = Math.round(hit.damage * factor);
+    if (hit.ranged !== true) attacker.hasHit = true;
     victim.hp = Math.max(0, victim.hp - damage);
-    this.events.emit('hit', {
-      tick: this.tick,
-      attacker: attacker.index,
-      victim: victim.index,
-      part,
-      damage,
-      hpLeft: victim.hp,
-      parried,
-      ...(skill === undefined ? {} : { skill }),
-      ...(point === undefined ? {} : { point }),
-    });
-    if (parried) emitNoDamage(this.events, world, this.tick, attacker, victim, 'blocked', skill ?? null, point);
-    const recoil = knockbackSpeed(this.config, impactSpeed, attacker.spec.stats, victim.spec.stats) * factor;
+    emitHit(this.events, this.tick, hit, victim, damage, parried);
+    if (parried) emitNoDamage(this.events, world, this.tick, attacker, victim, 'blocked', hit.skill ?? null, hit.point);
+    const recoil = knockbackSpeed(this.config, impactSpeed, attacker.effectiveStats, victim.effectiveStats) * factor;
     world.impulse(victim.index, attacker.facing * recoil, -recoil * this.config.stats.knockbackLift);
     if (victim.hp === 0 || parried) return;
-    // Garde ou esquive face à un coup qu'elles ne retiennent pas : dégâts pleins, la réaction se casse, pas d'étourdissement (Maxence, 2026-11-17).
-    if (victim.state === 'parry' || victim.state === 'dodge') victim.machine.transition('idle');
-    else stunVictim(this.config, victim, impactSpeed);
+    if (hit.applies !== undefined) this.statuses.apply(attacker, victim, hit.applies, world);
+    shakeVictim(this.config, victim, impactSpeed);
   }
 
   /** Termine le duel si au moins un combattant est à 0 PV : KO, vainqueur ou égalité. */
@@ -172,7 +173,8 @@ export class Duel {
     if (down.length === 1) {
       const winner = this.opponentOf(down[0]);
       this.winner = winner.index;
-      winner.machine.transition(winner.state === 'attack' ? 'recovery' : 'idle');
+      const settled = winner.state === 'attack' ? 'recovery' : 'idle';
+      if (winner.state !== settled) winner.machine.transition(settled); // Un KO par statut peut tomber pendant que le vainqueur est déjà au repos.
     }
     this.events.emit('duelEnd', { tick: this.tick, winner: this.winner });
   }

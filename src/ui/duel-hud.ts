@@ -50,6 +50,16 @@ export class DuelHud {
     });
   }
 
+  /**
+   * Départ de la rangée des statuts d'un combattant (story 013) : le bas de sa barre de vie, depuis
+   * son bord extérieur ; la rangée de droite se lit en miroir (`direction` −1).
+   */
+  statusRow(index: number): { x: number; y: number; direction: 1 | -1 } {
+    const { hud } = this;
+    const y = hud.margin + hud.barHeight;
+    return index === 0 ? { x: this.barX(index), y, direction: 1 } : { x: this.barX(index) + hud.barWidth, y, direction: -1 };
+  }
+
   private barX(index: number): number {
     const { hud } = this;
     return index === 0 ? hud.margin : this.arena.width - hud.margin - hud.barWidth;

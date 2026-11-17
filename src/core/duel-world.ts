@@ -78,6 +78,11 @@ export interface DuelWorld {
   drive(fighter: number, intent: FighterIntent): void;
   /** Ajoute une vitesse (px par pas) à tout le corps d'un combattant : recul d'un coup reçu. */
   impulse(fighter: number, velocityX: number, velocityY: number): void;
+  /**
+   * Réapplique l'échelle de masse du corps (`massScale` des stats effectives) quand le poids change
+   * en cours de duel (statuts, story 013). Ex. : `world.setMassScale(0, massScale(config, fighter.effectiveStats))`.
+   */
+  setMassScale(fighter: number, scale: number): void;
   /** Accélération de la gravité, en px par pas au carré (sert à viser un saut). */
   gravityPerStep(): number;
   /** Avance la physique d'un pas fixe. */
@@ -86,8 +91,13 @@ export interface DuelWorld {
   fighterX(fighter: number): number;
   /** Rend les contacts relevés depuis le dernier appel, puis les oublie. */
   drainContacts(): ContactReport[];
-  /** Position et angle d'une partie du corps (lecture seule). */
-  readPart(fighter: number, part: ContactPartName): PartTransform;
+  /**
+   * Position et angle d'une partie du corps (lecture seule). Avec `out`, l'écrit dedans et le rend,
+   * sans rien allouer : à préférer dans les boucles par image.
+   *
+   * @example const torso: PartTransform = { x: 0, y: 0, angle: 0 }; world.readPart(0, 'torso', torso);
+   */
+  readPart(fighter: number, part: ContactPartName, out?: PartTransform): PartTransform;
   /** Tous les nombres décrivant l'état physique, dans un ordre stable (pour l'empreinte). */
   snapshot(): number[];
 }

@@ -35,6 +35,15 @@ export interface DuelEvents {
   counter: { tick: number; fighter: number; trigger: 'dodge' | 'parry' };
   /** Coup enchaîné sans délai ; `count` = rang du coup dans la série (2 pour le premier enchaînement). Suivi d'un `attackStart`. */
   combo: { tick: number; fighter: number; count: number };
+  /**
+   * Un coup applique un statut (story 013). `charges` : charges actives après l'application ; `chargesAdded` :
+   * charges que le coup a ajoutées ; `replaced` : au plafond, la plus ancienne a été remplacée. `x`, `y` : le torse de la victime.
+   */
+  statusApplied: { tick: number; source: number; victim: number; status: string; charges: number; chargesAdded: number; replaced: boolean; x: number; y: number };
+  /** Perte de PV due à un statut (pas un coup : ni recul ni étourdissement). `x`, `y` : le torse de la victime. */
+  statusTick: { tick: number; victim: number; status: string; damage: number; hpLeft: number; charges: number; x: number; y: number };
+  /** Une ou plusieurs charges ont expiré ; `chargesLeft` vaut 0 quand le statut disparaît. */
+  statusExpired: { tick: number; victim: number; status: string; chargesLeft: number };
   ko: { tick: number; fighter: number };
   /** `winner` vaut `null` en cas d'égalité (les deux combattants KO sur le même tick). */
   duelEnd: { tick: number; winner: number | null };
@@ -56,6 +65,9 @@ export class EventBus {
     parry: [],
     counter: [],
     combo: [],
+    statusApplied: [],
+    statusTick: [],
+    statusExpired: [],
     ko: [],
     duelEnd: [],
   };

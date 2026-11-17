@@ -4,6 +4,7 @@ import type { EventBus } from './events';
 import type { Fighter } from './fighter';
 import { skillDamage } from './skill-spec';
 import { hitDamage } from './stats';
+import type { StatusApplication } from './status-spec';
 
 /** Un coup repéré pendant un tick, avant d'être appliqué (contact de corps, ou projectile). */
 export interface PendingHit {
@@ -25,6 +26,27 @@ export interface PendingHit {
    * propre contact, son « Raté » et son enchaînement.
    */
   ranged?: boolean;
+  /**
+   * Statuts que le coup applique à la victime (story 013), s'il n'est pas paré et ne la met pas KO.
+   * Point d'entrée unique : rempli depuis `SkillSpec.hit.applies` ; la story 005 le remplira pour les griffes.
+   */
+  applies?: readonly StatusApplication[];
+}
+
+/** Émet `hit` : les dégâts réellement infligés (après une parade) et les PV restants de la victime. */
+export function emitHit(events: EventBus, tick: number, hit: PendingHit, victim: Fighter, damage: number, parried: boolean): void {
+  const { attacker, part, skill, point } = hit;
+  events.emit('hit', {
+    tick,
+    attacker: attacker.index,
+    victim: victim.index,
+    part,
+    damage,
+    hpLeft: victim.hp,
+    parried,
+    ...(skill === undefined ? {} : { skill }),
+    ...(point === undefined ? {} : { point }),
+  });
 }
 
 /** Pourquoi un coup ne fait pas (tous) ses dégâts. */
@@ -65,7 +87,8 @@ export function contactHit(config: DuelConfig, attacker: Fighter, part: ContactP
   const run = attacker.state === 'skill' ? attacker.skillRun : null;
   if (run !== null) {
     const { skill } = run;
-    return { attacker, part, impactSpeed, damage: skillDamage(config, skill.hit, stats, impactSpeed), skill: skill.id, parryable: skill.reactions.parryable };
+    const damage = skillDamage(config, skill.hit, stats, impactSpeed);
+    return { attacker, part, impactSpeed, damage, skill: skill.id, parryable: skill.reactions.parryable, ...(skill.hit.applies === undefined ? {} : { applies: skill.hit.applies }) };
   }
   return { attacker, part, impactSpeed, damage: hitDamage(config, attacker.attack.damage, impactSpeed, stats) };
 }

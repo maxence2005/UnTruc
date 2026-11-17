@@ -138,4 +138,38 @@ export const PRESENTATION: PresentationConfig = {
       },
     },
   },
+  // Story 013. Pastille de 28 px et 6 px d'écart : `design/ux/hud.md` (Visual Budget) ; chiffre en 14 px, le minimum de l'art bible.
+  statuses: {
+    badge: {
+      size: 28,
+      radius: 6,
+      borderWidth: 2,
+      borderColor: 0x22302a,
+      glyphColor: 0xf3f5ef,
+      glyphShare: 0.17,
+      glyphDropShare: 0.11,
+      countFont: 'bold 14px sans-serif',
+      countColor: '#f3f5ef',
+      countStrokeColor: '#22302a',
+      countStrokeWidth: 4,
+      countInset: 3,
+      gap: 6,
+      maxPerFighter: 3,
+    },
+    damage: { text: '-{damage}', font: 'bold 20px sans-serif', color: '#d9573b', strokeColor: '#22302a', strokeWidth: 4, offsetX: 28, lift: 10, riseDistance: 30, durationMs: 700, maxShown: 8 },
+    blood: { maxDrops: 64, dropRadius: 3, outlineWidth: 1, outlineColor: 0x22302a, gravity: 900, lifeMs: 1500, maxPulses: 4, pulseRadius: 18, pulseGrowth: 0.6, pulseDurationMs: 160, pulseAlpha: 0.45 },
+    // Accessibilité : 3 flashs par seconde au plus (`design/accessibility-requirements.md`).
+    flashLimit: { maxFlashes: 3, windowMs: 1000 },
+    byId: {
+      bleed: {
+        glyph: 'drop',
+        color: 0xa3242f,
+        dropColor: 0xd42f3a,
+        flashColor: 0xd9573b,
+        // Une goutte toutes les 600 ms avec une charge, 120 ms à 5 charges (le maximum de `content/statuses/bleed.ts`).
+        drips: { intervalMs: 600, minIntervalMs: 120, spreadX: 12, spreadY: 20, fallSpeedMax: 40 },
+        onTick: { splash: 4, splashSpeedMin: 80, splashSpeedMax: 180, splashSpreadDeg: 50, flash: true },
+      },
+    },
+  },
 };

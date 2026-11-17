@@ -3,7 +3,9 @@ import { DUEL_CONFIG } from './content/duel-config';
 import { FIGHTERS } from './content/fighters';
 import { WEAPONS } from './content/weapons';
 import { PRESENTATION } from './content/presentation';
+import { STATUSES } from './content/statuses';
 import type { FighterSpec } from './core/fighter-spec';
+import { readDemoStatus, withDemoStatus } from './debug/status-demo';
 import { DuelScene } from './scenes/duel-scene';
 
 /** Seed demandé dans l'URL (`?seed=123`), sinon celui de la config. */
@@ -20,7 +22,7 @@ function readSeed(): number {
  */
 function readFighters(): readonly [FighterSpec, FighterSpec] {
   const params = new URLSearchParams(window.location.search);
-  const fighters = params.get('competences') === 'aucune' ? withoutSkills(FIGHTERS) : FIGHTERS;
+  const fighters = withStatusDemo(params, params.get('competences') === 'aucune' ? withoutSkills(FIGHTERS) : FIGHTERS);
   const raw = params.get('armes');
   if (raw === null) return fighters;
   const ids = raw.split(',').map((id) => id.trim());
@@ -31,6 +33,12 @@ function readFighters(): readonly [FighterSpec, FighterSpec] {
 /** `?competences=aucune` : les combattants sans compétences (duel des stories précédentes, hash de référence). */
 function withoutSkills([first, second]: readonly [FighterSpec, FighterSpec]): readonly [FighterSpec, FighterSpec] {
   return [{ ...first, skills: [] }, { ...second, skills: [] }];
+}
+
+/** `?statut=saignement` : les compétences appliquent une charge du statut à chaque coup (démo du rendu, story 013). */
+function withStatusDemo(params: URLSearchParams, fighters: readonly [FighterSpec, FighterSpec]): readonly [FighterSpec, FighterSpec] {
+  const status = readDemoStatus(params.get('statut'), STATUSES);
+  return status === null ? fighters : withDemoStatus(fighters, status);
 }
 
 /** `?fx=fireball` : lance une boule de feu de démonstration au début du duel (touche F : une à tout moment). */

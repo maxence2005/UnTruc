@@ -82,7 +82,7 @@ export function installDuelDebugHook(seed: number, duel: Duel, world: DuelWorld)
         winner: duel.winner,
         hp: Object.freeze([first.hp, second.hp] as const),
         facing: Object.freeze([first.facing, second.facing] as const),
-        stateHash: hashNumbers([duel.tick, first.hp, second.hp, ...stateCodes, ...world.snapshot(), ...duel.skills.snapshot()]),
+        stateHash: hashNumbers([duel.tick, first.hp, second.hp, ...stateCodes, ...world.snapshot(), ...duel.skills.snapshot(), ...duel.statuses.snapshot()]),
         skills: { starts: { ...starts }, noDamage: { ...noDamage }, log: [...log] },
       });
     },

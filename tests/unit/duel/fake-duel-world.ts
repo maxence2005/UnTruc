@@ -43,6 +43,13 @@ export class FakeDuelWorld implements DuelWorld {
     this.positions[fighter] += velocityX * this.motion.knockbackScale;
   }
 
+  /** Échelles de masse reçues, dans l'ordre. */
+  readonly massScales: { fighter: number; scale: number }[] = [];
+
+  setMassScale(fighter: number, scale: number): void {
+    this.massScales.push({ fighter, scale });
+  }
+
   gravityPerStep(): number {
     return 0.28;
   }
@@ -59,8 +66,12 @@ export class FakeDuelWorld implements DuelWorld {
     return [...this.contacts];
   }
 
-  readPart(fighter: number): PartTransform {
-    return { x: this.positions[fighter], y: 0, angle: 0 };
+  readPart(fighter: number, _part?: ContactPartName, out?: PartTransform): PartTransform {
+    const target = out ?? { x: 0, y: 0, angle: 0 };
+    target.x = this.positions[fighter];
+    target.y = 0;
+    target.angle = 0;
+    return target;
   }
 
   snapshot(): number[] {

@@ -37,6 +37,8 @@ export class MatterDuelWorld implements DuelWorld {
   private readonly preStepVelocity = new Map<number, { x: number; y: number }>();
   private readonly groundY: number;
   private readonly stepMs: number;
+  /** Masse de chaque partie du corps à l'échelle 1, par combattant, dans l'ordre de `BODY_PART_NAMES` (voir `setMassScale`). */
+  private readonly unitMasses: number[][];
 
   constructor(
     private readonly matter: Phaser.Physics.Matter.MatterPhysics,
@@ -57,6 +59,10 @@ export class MatterDuelWorld implements DuelWorld {
     this.ragdolls = specs.map((spec, index) =>
       buildRagdoll(matter, spec.body, spawnX[index], this.groundY, facings[index], physics.jointStiffness, massScale(config, spec.stats)),
     );
+    this.unitMasses = this.ragdolls.map((ragdoll, index) => {
+      const scale = massScale(config, specs[index].stats);
+      return BODY_PART_NAMES.map((part) => ragdoll.parts[part].mass / scale);
+    });
     this.weapons = specs.map((spec, index) => (spec.weapon === undefined ? undefined : buildWeapon(matter, spec, this.ragdolls[index])));
     this.ragdolls.forEach((ragdoll, fighter) => {
       for (const part of BODY_PART_NAMES) {
@@ -96,6 +102,13 @@ export class MatterDuelWorld implements DuelWorld {
     }
   }
 
+  /** `Body.setMass` de Matter met aussi l'inertie à l'échelle ; l'arme tenue garde sa masse, comme à la création. */
+  setMassScale(fighter: number, scale: number): void {
+    const { parts } = this.ragdolls[fighter];
+    const unit = this.unitMasses[fighter];
+    BODY_PART_NAMES.forEach((part, index) => this.matter.body.setMass(parts[part], unit[index] * scale));
+  }
+
   gravityPerStep(): number {
     const { gravity } = this.matter.world.localWorld;
     return gravity.y * gravity.scale * this.stepMs ** 2;
@@ -133,10 +146,14 @@ export class MatterDuelWorld implements DuelWorld {
     return { ...gripGaps(ragdoll, weapon, this.specs[fighter].body.foreArm), torsoY: ragdoll.parts.torso.position.y };
   }
 
-  readPart(fighter: number, part: ContactPartName): PartTransform {
+  readPart(fighter: number, part: ContactPartName, out?: PartTransform): PartTransform {
     const body = part === 'weapon' ? this.weapons[fighter]?.body : this.ragdolls[fighter].parts[part];
     if (body === undefined) throw new Error(`Le combattant ${fighter} ne tient pas d'arme`);
-    return { x: body.position.x, y: body.position.y, angle: body.angle };
+    const target = out ?? { x: 0, y: 0, angle: 0 };
+    target.x = body.position.x;
+    target.y = body.position.y;
+    target.angle = body.angle;
+    return target;
   }
 
   snapshot(): number[] {

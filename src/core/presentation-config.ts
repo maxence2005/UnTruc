@@ -1,5 +1,6 @@
 import type { NoDamageReason } from './hit';
 import type { SkillCategory } from './skill-spec';
+import type { StatusesPresentation } from './status-presentation';
 
 /** Apparence du HUD du duel : tailles en pixels, couleurs, polices et textes. */
 export interface HudPresentation {
@@ -34,6 +35,8 @@ export interface PresentationConfig {
   hud: HudPresentation;
   fx: FxConfig;
   skills: SkillsPresentation;
+  /** Statuts de combat (story 013), voir `status-presentation.ts`. */
+  statuses: StatusesPresentation;
 }
 
 /** Seuils des effets d'impact, en part des PV max de la victime perdue sur un seul coup (0.12 = 12 %). */

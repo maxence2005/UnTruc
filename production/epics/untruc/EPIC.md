@@ -28,5 +28,6 @@ Out of scope: see the brief (comptes, serveur, ligue en ligne, son, IA générat
 | 010 | Look des combattants de la piste 5 | Visual/Feel | Complete | N/A (minimal) |
 | 011 | Système de niveaux | Logic | Ready | N/A (minimal) |
 | 012 | Choix du personnage au début | UI | Ready | N/A (minimal) |
-| 013 | Statuts de combat (saignement) | Logic | Ready | N/A (minimal) |
+| 013 | Statuts de combat (saignement) | Logic | Complete | N/A (minimal) |
 | 014 | HUD de combat | UI | Ready | N/A (minimal) |
+| 015 | Écran d'accueil et options | UI | Ready | N/A (minimal) |

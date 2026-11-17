@@ -8,7 +8,8 @@ import { lerpPose, type Pose } from './pose';
 import type { Reaction } from './reactions';
 import type { SkillRun } from './skill-run';
 import type { SkillSpec } from './skill-spec';
-import { staminaRegenPerTick, walkSpeedScale } from './stats';
+import { staminaRegenPerTick, walkSpeedScale, type FighterStats } from './stats';
+import type { ActiveStatus } from './status-spec';
 
 export type { Facing } from './facing';
 
@@ -58,8 +59,12 @@ export class Fighter {
   facing: Facing;
   /** Ticks consécutifs passés avec l'adversaire franchement derrière soi (voir `updateFacing`). */
   turnTicks = 0;
+  /** Statuts actifs (story 013), tenus par `StatusSystem`. */
+  readonly statuses: ActiveStatus[] = [];
+  /** Stats en cours : celles de la spec, poids retouché par les statuts (`setWeight`). Recul, étourdissement et masse les lisent. */
+  effectiveStats: FighterStats;
   private readonly walkCycleTicks: number;
-  private readonly walkSpeed: number;
+  private walkSpeed: number;
   private readonly dodgeRetreatSpeed: number;
   private readonly staminaRegen: number;
 
@@ -83,9 +88,19 @@ export class Fighter {
     this.recoveryTicks = msToTicks(this.attack.recoveryMs, stepHz);
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
     this.reactionTick = Math.max(1, this.windupTicks - msToTicks(config.reactions.leadMs, stepHz));
+    this.effectiveStats = spec.stats;
     this.walkSpeed = spec.walk.speed * walkSpeedScale(config, spec.stats);
     this.dodgeRetreatSpeed = config.reactions.dodgeRetreatSpeed;
     this.staminaRegen = staminaRegenPerTick(config, spec.stats);
+  }
+
+  /**
+   * Change le poids effectif (statuts, story 013) : recul, étourdissement et vitesse de marche le suivent.
+   * La masse du corps est à réappliquer par l'appelant (`DuelWorld.setMassScale`).
+   */
+  setWeight(config: DuelConfig, weight: number): void {
+    this.effectiveStats = { ...this.spec.stats, weight };
+    this.walkSpeed = this.spec.walk.speed * walkSpeedScale(config, this.effectiveStats);
   }
 
   /** Vrai si le combattant peut parer : aux poings, ou avec une arme qui a une garde. */
