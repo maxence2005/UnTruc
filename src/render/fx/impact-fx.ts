@@ -28,8 +28,11 @@ const VEIL_DEPTH = -5;
 export class ImpactFx {
   private readonly layer: Phaser.GameObjects.Graphics;
   private readonly veil: Phaser.GameObjects.Graphics;
-  private readonly timer = new TimeScale();
-  private readonly flash: FlashTracker;
+  /** Ralenti et flash, partagés avec les effets de compétence (`SkillFx`). */
+  readonly timer = new TimeScale();
+  readonly flash: FlashTracker;
+  /** Nombre de combattants du duel (une vue par combattant), partagé avec `SkillFx`. */
+  readonly fighters: number;
   private readonly sparks: SparkFx;
   private readonly shockwaves: ShockwaveFx;
   private readonly fireballs: FireballFx;
@@ -52,6 +55,7 @@ export class ImpactFx {
     this.veil = scene.add.graphics().setDepth(VEIL_DEPTH).setAlpha(0);
     this.veil.fillStyle(config.slowmo.veilColor, 1);
     this.veil.fillRect(0, 0, arena.width, arena.height);
+    this.fighters = views.length;
     this.flash = new FlashTracker(views.length, config.flash.durationMs, config.flash.peakAlpha);
     this.sparks = new SparkFx(config.sparks, rng);
     this.shockwaves = new ShockwaveFx(config.shockwave);
@@ -60,7 +64,7 @@ export class ImpactFx {
       if (this.destroyed) return;
       const impact = classifyHit(hit.damage, hit.parried, this.maxHp(hit.victim), config.thresholds);
       const victimTorso = this.world.readPart(hit.victim, 'torso');
-      const point = impactPoint(this.world.readPart(hit.attacker, hit.part), victimTorso, config.impactPullToVictim);
+      const point = hit.point ?? impactPoint(this.world.readPart(hit.attacker, hit.part), victimTorso, config.impactPullToVictim);
       const outward = Math.atan2(point.y - victimTorso.y, point.x - victimTorso.x);
       const { sparks } = config;
       const count = impact.sparks === 'strong' ? sparks.strongCount : impact.sparks === 'parried' ? sparks.parriedCount : sparks.count;
@@ -83,7 +87,11 @@ export class ImpactFx {
     return this.timer.value;
   }
 
-  /** Lance la boule de feu du combattant `fighter` vers son adversaire. Aucune compétence ne l'appelle encore. */
+  /**
+   * Lance une boule de feu autonome du combattant `fighter` vers son adversaire : sert seulement à la
+   * démo (touche F, `?fx=fireball`). Les boules de la compétence boule de feu ne passent pas ici :
+   * `SkillFx` les pose sur les projectiles du duel (`FireballFx.place` / `release`).
+   */
   launchFireball(fighter: number): void {
     if (this.destroyed) return;
     const from = this.world.readPart(fighter, 'foreArmFront');

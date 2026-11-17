@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DUEL_CONFIG } from '../../src/content/duel-config';
-import { FIGHTERS } from '../../src/content/fighters';
+import { FIGHTERS } from './duel/plain-fighters';
 import { reactionChance } from '../../src/core/reactions';
 import { SEED, OTHER_SEED, MAX_TICKS, LOTS_OF_HP, BASE_STATS, ALWAYS, configWith, withStats, setUp, TARGET, type Logged } from './duel/reaction-fixtures';
 

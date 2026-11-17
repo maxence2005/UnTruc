@@ -78,6 +78,8 @@ export interface DuelWorld {
   drive(fighter: number, intent: FighterIntent): void;
   /** Ajoute une vitesse (px par pas) à tout le corps d'un combattant : recul d'un coup reçu. */
   impulse(fighter: number, velocityX: number, velocityY: number): void;
+  /** Accélération de la gravité, en px par pas au carré (sert à viser un saut). */
+  gravityPerStep(): number;
   /** Avance la physique d'un pas fixe. */
   step(): void;
   /** Position x du bassin d'un combattant. */

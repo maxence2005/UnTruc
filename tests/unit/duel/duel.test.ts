@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DUEL_CONFIG } from '../../../src/content/duel-config';
-import { FIGHTERS } from '../../../src/content/fighters';
+import { FIGHTERS } from './plain-fighters';
 import { Duel } from '../../../src/core/duel';
 import type { DuelConfig } from '../../../src/core/duel-config';
 import type { DuelEvents } from '../../../src/core/events';

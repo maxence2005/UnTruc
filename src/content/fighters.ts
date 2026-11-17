@@ -1,6 +1,7 @@
 import type { FighterSpec } from '../core/fighter-spec';
 import type { Pose } from '../core/pose';
 import { FACE_KIT } from './face-kit';
+import { SKILLS } from './skills';
 
 const STANCE: Pose = {
   lean: 0.1,
@@ -139,6 +140,7 @@ const BASE_FIGHTER: Omit<FighterSpec, 'id' | 'name' | 'colors' | 'look'> = {
     parry: { strength: 1, support: 1 },
     stunned: { strength: 0.25, support: 0.3 },
     ko: { strength: 0, support: 0 },
+    skill: { strength: 1, support: 1 },
   },
 };
 
@@ -149,7 +151,7 @@ const INK = 0x22302a;
 const CHALK = 0xf3f5ef;
 const CHEEK = 0xff8a80;
 
-/** Les deux combattants du duel : même corps, couleurs et visage différents. */
+/** Les deux combattants du duel : même corps, couleurs et visage différents. Rouge : saut et charge ; Bleu : saut et boule de feu. */
 export const FIGHTERS: readonly [FighterSpec, FighterSpec] = [
   {
     ...BASE_FIGHTER,
@@ -157,6 +159,7 @@ export const FIGHTERS: readonly [FighterSpec, FighterSpec] = [
     name: 'Rouge',
     colors: { body: 0xd9534f, limbBack: 0x9c3a37, head: SKIN, headShade: SKIN_SHADE, hair: 0xf2d16b, outline: INK, eyeWhite: CHALK, cheek: CHEEK },
     look: { eyes: 'angry', mouth: 'teeth', hair: 'spikes', beard: false, outlineWidth: OUTLINE_WIDTH, kit: FACE_KIT },
+    skills: [SKILLS.get('jump'), SKILLS.get('charge')],
   },
   {
     ...BASE_FIGHTER,
@@ -164,5 +167,6 @@ export const FIGHTERS: readonly [FighterSpec, FighterSpec] = [
     name: 'Bleu',
     colors: { body: 0x4a7fd1, limbBack: 0x315590, head: SKIN, headShade: SKIN_SHADE, hair: 0xa8682f, outline: INK, eyeWhite: CHALK, cheek: CHEEK },
     look: { eyes: 'round', mouth: 'smile', hair: 'bowl', beard: true, outlineWidth: OUTLINE_WIDTH, kit: FACE_KIT },
+    skills: [SKILLS.get('jump'), SKILLS.get('fireball')],
   },
 ];

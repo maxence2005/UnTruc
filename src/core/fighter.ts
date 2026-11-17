@@ -1,11 +1,13 @@
 import { msToTicks, type DuelConfig } from './duel-config';
-import type { FighterIntent, WeaponIntent } from './duel-world';
+import type { ContactPartName, FighterIntent, WeaponIntent } from './duel-world';
 import { resolveAttack, resolveParry, resolveStance } from './equipment';
 import type { Facing } from './facing';
 import type { AttackSpec, FighterSpec } from './fighter-spec';
 import { FighterStateMachine, type FighterState } from './fighter-state';
 import { lerpPose, type Pose } from './pose';
 import type { Reaction } from './reactions';
+import type { SkillRun } from './skill-run';
+import type { SkillSpec } from './skill-spec';
 import { staminaRegenPerTick, walkSpeedScale } from './stats';
 
 export type { Facing } from './facing';
@@ -46,6 +48,12 @@ export class Fighter {
   stamina: number;
   /** Mana restant (voir `spendMana`). */
   mana: number;
+  /** Compétences du combattant (voir `FighterSpec.skills`). */
+  readonly skills: readonly SkillSpec[];
+  /** Compétence en cours (état `skill`), sinon `null`. */
+  skillRun: SkillRun | null = null;
+  /** Recharge restante de chaque compétence utilisée, en ticks. */
+  readonly cooldowns: Record<string, number> = {};
   /** Regard courant, vers l'adversaire ; change par `updateFacing` (core), lu par la physique (`FighterIntent.facing`) et le rendu. */
   facing: Facing;
   /** Ticks consécutifs passés avec l'adversaire franchement derrière soi (voir `updateFacing`). */
@@ -69,6 +77,7 @@ export class Fighter {
     this.hp = spec.stats.hp;
     this.stamina = spec.stats.stamina;
     this.mana = spec.stats.mana;
+    this.skills = spec.skills ?? [];
     this.windupTicks = msToTicks(this.attack.windupMs, stepHz);
     this.strikeTicks = msToTicks(this.attack.strikeMs, stepHz);
     this.recoveryTicks = msToTicks(this.attack.recoveryMs, stepHz);
@@ -86,7 +95,7 @@ export class Fighter {
 
   /** Regagne un tick d'endurance, hors attaque, réaction et KO ; plafonné à la stat `stamina`. */
   recoverStamina(): void {
-    if (this.state === 'attack' || this.state === 'dodge' || this.state === 'parry' || this.state === 'ko') return;
+    if (this.state === 'attack' || this.state === 'skill' || this.state === 'dodge' || this.state === 'parry' || this.state === 'ko') return;
     this.stamina = Math.min(this.spec.stats.stamina, this.stamina + this.staminaRegen);
   }
 
@@ -107,9 +116,20 @@ export class Fighter {
 
   /** Vrai pendant la phase de frappe d'une attaque, la seule où un contact compte comme un coup. */
   get inStrikeWindow(): boolean {
+    if (this.state === 'skill') return this.skillRun?.strikeWindow === true;
     if (this.state !== 'attack') return false;
     const ticks = this.machine.ticksInState;
     return ticks >= this.windupTicks && ticks < this.windupTicks + this.strikeTicks;
+  }
+
+  /** Parties qui frappent : celles de la compétence en cours, sinon celles de l'attaque. */
+  get strikingParts(): readonly ContactPartName[] {
+    return this.state === 'skill' && this.skillRun !== null ? this.skillRun.skill.hit.strikingParts : this.attack.strikingParts;
+  }
+
+  /** Faux si la compétence en cours ne peut pas être esquivée : l'esquive de l'adversaire n'arrête pas son coup. */
+  get dodgeable(): boolean {
+    return this.state !== 'skill' || this.skillRun?.skill.reactions.dodgeable !== false;
   }
 
   /** Ordres pour le prochain pas physique, déduits de l'état courant. */
@@ -128,6 +148,11 @@ export class Fighter {
       intent.walkVelocity = this.facing * this.walkSpeed;
     } else if (this.state === 'dodge') {
       intent.walkVelocity = -this.facing * this.dodgeRetreatSpeed;
+    } else if (this.state === 'skill' && this.skillRun !== null) {
+      const { phase } = this.skillRun;
+      intent.walkVelocity = this.facing * (phase.walkSpeed ?? 0);
+      intent.armBoost = phase.armBoost ?? 1;
+      if (this.skillRun.airborne) intent.support = 0;
     } else if (this.inStrikeWindow) {
       intent.walkVelocity = this.facing * this.attack.lungeSpeed;
       intent.armBoost = this.attack.strikeArmBoost;
@@ -183,6 +208,8 @@ export class Fighter {
         return spec.dodgePose;
       case 'parry':
         return this.parryPose ?? this.stance;
+      case 'skill':
+        return this.skillRun?.pose(this.stance) ?? this.stance;
       case 'stunned':
       case 'ko':
         return spec.slump;

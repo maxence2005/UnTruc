@@ -30,7 +30,7 @@ export function wantedFacing(selfX: number, opponentX: number, current: Facing, 
 
 /**
  * Un tick de retournement : l'adversaire franchement derrière soi pendant
- * `turnDelayMs` donne un demi-tour. Pas de demi-tour au milieu d'une attaque (le
+ * `turnDelayMs` donne un demi-tour. Pas de demi-tour au milieu d'une attaque ou d'une compétence (le
  * geste lancé va au bout, le compteur continue) ni une fois KO.
  * Implémente la décision « regard » de la story 002 (2026-11-14).
  */
@@ -41,7 +41,7 @@ export function updateFacing(fighter: Turner, selfX: number, opponentX: number, 
     return;
   }
   fighter.turnTicks += 1;
-  if (fighter.turnTicks >= msToTicks(config.turnDelayMs, stepHz) && fighter.state !== 'attack') {
+  if (fighter.turnTicks >= msToTicks(config.turnDelayMs, stepHz) && fighter.state !== 'attack' && fighter.state !== 'skill') {
     fighter.facing = fighter.facing === 1 ? -1 : 1;
     fighter.turnTicks = 0;
   }

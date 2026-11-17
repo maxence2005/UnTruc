@@ -145,6 +145,14 @@ export interface StatsConfig {
   staminaRegenPerRecovery: number;
 }
 
+/** Compétences (story 004) : formules communes ; chaque compétence porte ses propres valeurs (`content/skills/`). */
+export interface SkillsConfig {
+  /** Puissance magique qui donne exactement le dégât de base d'une compétence magique. */
+  referenceMagicPower: number;
+  /** Chance de tenter une compétence possible plutôt qu'un coup simple : `base + perIntelligence × intelligence`, bornée entre 0 et `max`. */
+  useChance: { base: number; perIntelligence: number; max: number };
+}
+
 /** Configuration générale d'un duel. */
 export interface DuelConfig {
   /**
@@ -166,6 +174,7 @@ export interface DuelConfig {
   damage: DamageConfig;
   stats: StatsConfig;
   reactions: ReactionsConfig;
+  skills: SkillsConfig;
   /** Retournement vers l'adversaire (story 002). */
   facing: FacingConfig;
   physics: PhysicsTuning;
@@ -186,6 +195,7 @@ export function assertDuelConfig(config: DuelConfig): void {
     'stats.minDelayScale': config.stats.minDelayScale,
     'stats.minWalkScale': config.stats.minWalkScale,
     'reactions.maxComboHits': config.reactions.maxComboHits,
+    'skills.referenceMagicPower': config.skills.referenceMagicPower,
   };
   if (!(config.facing.turnMargin >= 0) || !(config.facing.turnDelayMs >= 0)) {
     throw new Error('Config du duel invalide : facing.turnMargin et facing.turnDelayMs doivent être positifs ou nuls.');

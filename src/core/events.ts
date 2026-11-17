@@ -1,10 +1,32 @@
 import type { ContactPartName } from './duel-world';
+import type { NoDamageReason } from './hit';
 
 /** Événements émis par le duel. Rendu, UI et effets s'y abonnent ; la logique ne les appelle jamais. */
 export interface DuelEvents {
   attackStart: { tick: number; fighter: number };
   /** `parried` : le coup a été paré (dégâts réduits, pas d'étourdissement). */
-  hit: { tick: number; attacker: number; victim: number; part: ContactPartName; damage: number; hpLeft: number; parried: boolean };
+  /** `parried` : le coup a été paré (dégâts réduits, pas d'étourdissement). `skill` : compétence qui l'a porté ; `point` : où il tombe (projectile). */
+  hit: {
+    tick: number;
+    attacker: number;
+    victim: number;
+    part: ContactPartName;
+    damage: number;
+    hpLeft: number;
+    parried: boolean;
+    skill?: string;
+    point?: { x: number; y: number };
+  };
+  /** Un coup ne fait pas (tous) ses dégâts, et pourquoi : `blocked` (paré), `dodged` (esquivé), `missed` (la fenêtre de coup s'est fermée sans contact). `x`, `y` : où l'afficher. */
+  noDamage: { tick: number; attacker: number; victim: number; reason: NoDamageReason; skill: string | null; x: number; y: number };
+  /** Une compétence part ; `target` : le point du sol visé, fixé à cet instant. */
+  skillStart: { tick: number; fighter: number; skill: string; target: { x: number; y: number } };
+  /** Une phase de la compétence commence et porte un événement de rendu (`SkillPhase.cue`) ; `x`, `y` : le torse du lanceur. */
+  skillCue: { tick: number; fighter: number; skill: string; cue: string; x: number; y: number };
+  /** La compétence est finie ; `interrupted` : le lanceur a été sonné avant la fin. */
+  skillEnd: { tick: number; fighter: number; skill: string; interrupted: boolean };
+  /** Un projectile s'arrête : il a touché (`hit`), été esquivé (`dodged`) ou rien touché (`missed`). */
+  projectileEnd: { tick: number; fighter: number; skill: string; id: number; reason: 'hit' | 'dodged' | 'missed'; x: number; y: number };
   /** Le défenseur esquive l'attaque en cours de `attacker` : elle ne lui fera aucun dégât. */
   dodge: { tick: number; defender: number; attacker: number; staminaLeft: number };
   /** Le défenseur se met en garde contre l'attaque en cours de `attacker`. */
@@ -25,6 +47,11 @@ export class EventBus {
   private readonly listeners: { [K in keyof DuelEvents]: Listener<K>[] } = {
     attackStart: [],
     hit: [],
+    noDamage: [],
+    skillStart: [],
+    skillCue: [],
+    skillEnd: [],
+    projectileEnd: [],
     dodge: [],
     parry: [],
     counter: [],

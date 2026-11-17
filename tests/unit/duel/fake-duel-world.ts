@@ -43,6 +43,10 @@ export class FakeDuelWorld implements DuelWorld {
     this.positions[fighter] += velocityX * this.motion.knockbackScale;
   }
 
+  gravityPerStep(): number {
+    return 0.28;
+  }
+
   step(): void {
     this.steps += 1;
   }

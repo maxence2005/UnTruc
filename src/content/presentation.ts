@@ -23,8 +23,8 @@ export const PRESENTATION: PresentationConfig = {
   fx: {
     seed: 7,
     impactPullToVictim: 0.35,
-    thresholds: { slowmoDamageShare: 0.15, shockwaveDamageShare: 0.3 },
-    slowmo: { scale: 0.18, durationMs: 900, rampMs: 250, koScale: 0.18, koDurationMs: 1400, veilColor: 0x0a0e18, veilAlpha: 0.45 },
+    thresholds: { slowmoDamageShare: 0.3, shockwaveDamageShare: 0.3 },
+    slowmo: { scale: 0.18, durationMs: 700, rampMs: 250, koScale: 0.18, koDurationMs: 1400, veilColor: 0x0a0e18, veilAlpha: 0.45 },
     sparks: {
       maxParticles: 96,
       count: 10,
@@ -53,6 +53,8 @@ export const PRESENTATION: PresentationConfig = {
       speed: 450,
       radius: 22,
       trailPoints: 14,
+      /** Une image à 60 i/s : la longueur d'avant l'échantillonnage au temps d'effet. */
+      trailSampleMs: 1000 / 60,
       trailTaper: 0.2,
       outerColor: 0xff4d2e,
       midColor: 0xff9a3c,
@@ -65,6 +67,75 @@ export const PRESENTATION: PresentationConfig = {
       impactRadius: 130,
       demoDelayMs: 600,
       demoRepeatMs: 1500,
+    },
+  },
+  skills: {
+    banner: {
+      font: 'bold 26px sans-serif',
+      textColor: '#ffffff',
+      backColor: 0x111827,
+      backAlpha: 0.8,
+      borderWidth: 3,
+      paddingX: 14,
+      paddingY: 6,
+      radius: 10,
+      offsetY: 70,
+      gap: 12,
+      durationMs: 1100,
+      fadeMs: 300,
+      riseDistance: 18,
+    },
+    reasons: {
+      font: 'bold 34px sans-serif',
+      strokeColor: '#111827',
+      strokeWidth: 6,
+      durationMs: 900,
+      riseDistance: 50,
+      lift: 30,
+      maxShown: 6,
+      byReason: {
+        blocked: { text: 'Bloqué', color: '#8ecbff' },
+        dodged: { text: 'Esquivé', color: '#fff3b0' },
+        missed: { text: 'Raté', color: '#ff9a8a' },
+      },
+    },
+    marker: { alpha: 0.9, ringRadius: 46, ringSquash: 0.3, ringWidth: 4, arcHeight: 150, dashLength: 14, gapLength: 12, lineWidth: 4, arcSegments: 28 },
+    // sampleMs = une image à 60 i/s : 16 points x 1000/60 ms, soit la longueur d'avant (un point par image à 60 i/s).
+    trail: { points: 16, sampleMs: 1000 / 60, width: 26, alpha: 0.55 },
+    categories: { attack: 'Attaque', magic: 'Magie', transformation: 'Transformation' },
+    byId: {
+      jump: {
+        name: 'Saut',
+        color: 0x7be0a4,
+        marker: true,
+        cues: {
+          telegraph: { anchor: 'feet', sparks: 5 },
+          airborne: { anchor: 'torso', trail: 'start' },
+          land: { anchor: 'feet', shockwave: 120, sparks: 14, trail: 'stop', hideMarker: true },
+        },
+        onHit: { anchor: 'torso', shockwave: 110, sparks: 8 },
+      },
+      charge: {
+        name: 'Charge',
+        color: 0xffa63c,
+        marker: false,
+        cues: {
+          brace: { anchor: 'feet', sparks: 6 },
+          rush: { anchor: 'feet', sparks: 8, trail: 'start' },
+        },
+        onHit: { anchor: 'torso', shockwave: 140, sparks: 12, flash: true },
+      },
+      fireball: {
+        name: 'Boule de feu',
+        color: 0xff6a3c,
+        marker: false,
+        cues: {
+          charge: { anchor: 'hand', sparks: 6 },
+          launch: { anchor: 'hand', sparks: 10, shockwave: 60, flash: true },
+        },
+        onHit: { anchor: 'torso', shockwave: 150, sparks: 16, slowmo: true },
+        onMiss: { anchor: 'torso', shockwave: 90, sparks: 8 },
+      },
     },
   },
 };

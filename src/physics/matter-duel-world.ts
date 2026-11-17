@@ -96,6 +96,11 @@ export class MatterDuelWorld implements DuelWorld {
     }
   }
 
+  gravityPerStep(): number {
+    const { gravity } = this.matter.world.localWorld;
+    return gravity.y * gravity.scale * this.stepMs ** 2;
+  }
+
   step(): void {
     const bodies = this.ragdolls.flatMap((ragdoll) => BODY_PART_NAMES.map((part) => ragdoll.parts[part]));
     for (const weapon of this.weapons) if (weapon !== undefined) bodies.push(weapon.body);

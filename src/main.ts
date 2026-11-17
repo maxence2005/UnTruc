@@ -19,11 +19,18 @@ function readSeed(): number {
  * aux données (voir `src/content/weapons/README.md`). Sans le paramètre : `FIGHTERS` tels quels.
  */
 function readFighters(): readonly [FighterSpec, FighterSpec] {
-  const raw = new URLSearchParams(window.location.search).get('armes');
-  if (raw === null) return FIGHTERS;
+  const params = new URLSearchParams(window.location.search);
+  const fighters = params.get('competences') === 'aucune' ? withoutSkills(FIGHTERS) : FIGHTERS;
+  const raw = params.get('armes');
+  if (raw === null) return fighters;
   const ids = raw.split(',').map((id) => id.trim());
   const arm = (spec: FighterSpec, id: string | undefined): FighterSpec => (id === undefined || id === '' ? spec : { ...spec, weapon: WEAPONS.get(id) });
-  return [arm(FIGHTERS[0], ids[0]), arm(FIGHTERS[1], ids[1])];
+  return [arm(fighters[0], ids[0]), arm(fighters[1], ids[1])];
+}
+
+/** `?competences=aucune` : les combattants sans compétences (duel des stories précédentes, hash de référence). */
+function withoutSkills([first, second]: readonly [FighterSpec, FighterSpec]): readonly [FighterSpec, FighterSpec] {
+  return [{ ...first, skills: [] }, { ...second, skills: [] }];
 }
 
 /** `?fx=fireball` : lance une boule de feu de démonstration au début du duel (touche F : une à tout moment). */

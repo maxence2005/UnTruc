@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DUEL_CONFIG } from '../../src/content/duel-config';
-import { FIGHTERS } from '../../src/content/fighters';
+import { FIGHTERS } from './duel/plain-fighters';
 import { WEAPONS } from '../../src/content/weapons';
 import { Duel } from '../../src/core/duel';
 import { msToTicks } from '../../src/core/duel-config';

@@ -29,15 +29,21 @@ export function passes(fighter: Reactor, chance: ChanceConfig, cost: number, rng
   return fighter.stamina >= cost && rng.next() < reactionChance(chance, fighter.spec.stats.agility);
 }
 
+/** Réactions permises contre une attaque (une compétence peut en interdire : la boule de feu ne se pare pas). */
+export interface ReactionsAllowed {
+  dodgeable: boolean;
+  parryable: boolean;
+}
+
 /**
  * Décide la réaction du défenseur à une attaque qui commence : esquive d'abord,
  * parade si l'esquive échoue et que le défenseur peut parer, sinon rien. Un défenseur
  * hors d'état de réagir ne tire rien ; un défenseur qui ne peut pas parer ne tire pas la parade.
  */
-export function rollReaction(config: ReactionsConfig, defender: Reactor, rng: Rng): Reaction {
+export function rollReaction(config: ReactionsConfig, defender: Reactor, rng: Rng, allowed: ReactionsAllowed = { dodgeable: true, parryable: true }): Reaction {
   if (!canReact(defender.state)) return 'none';
-  if (passes(defender, config.dodgeChance, config.staminaCost.dodge, rng)) return 'dodge';
-  if (defender.canParry && passes(defender, config.parryChance, config.staminaCost.parry, rng)) return 'parry';
+  if (allowed.dodgeable && passes(defender, config.dodgeChance, config.staminaCost.dodge, rng)) return 'dodge';
+  if (allowed.parryable && defender.canParry && passes(defender, config.parryChance, config.staminaCost.parry, rng)) return 'parry';
   return 'none';
 }
 

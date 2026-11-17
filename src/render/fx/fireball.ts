@@ -1,13 +1,21 @@
 import type * as Phaser from 'phaser';
 import type { FxFireball } from '../../core/presentation-config';
+import { SampleClock } from './sample-clock';
 
 interface Point {
   x: number;
   y: number;
 }
 
+/** Emplacement libre : aucun projectile du duel n'y est posé. */
+const FREE = -1;
+
 interface Ball {
   alive: boolean;
+  /** Posée par `place` (suit un projectile du duel) : elle ne se déplace pas seule. */
+  tracked: boolean;
+  /** Id du projectile du duel posé sur cette boule (`place`), `FREE` sinon. */
+  projectileId: number;
   x: number;
   y: number;
   vx: number;
@@ -21,18 +29,25 @@ interface Ball {
 }
 
 /**
- * Boule de feu : tête lumineuse à trois couches et traînée qui s'affine. Effet prêt à
- * l'emploi : une compétence appellera `launch` ; rien ne l'appelle encore dans le jeu.
+ * Boule de feu : tête lumineuse à trois couches et traînée qui s'affine. `launch` la fait voler
+ * seule (démo, touche F) ; `place` la pose chaque image sur un projectile du duel (compétence boule de feu, story 004).
+ * La traînée s'échantillonne au temps d'effet (`trailSampleMs`), comme `TrailFx` : même longueur à
+ * toutes les fréquences d'image, étirée par le ralenti. Pool fixe de `maxFireballs` boules, rien
+ * n'est alloué pendant le jeu.
  */
 export class FireballFx {
   private readonly balls: Ball[];
+  private readonly clock: SampleClock;
 
   constructor(
     private readonly config: FxFireball,
     private readonly onArrive: (x: number, y: number) => void,
   ) {
+    this.clock = new SampleClock(config.trailSampleMs, 'fx.fireball.trailSampleMs');
     this.balls = Array.from({ length: config.maxFireballs }, () => ({
       alive: false,
+      tracked: false,
+      projectileId: FREE,
       x: 0,
       y: 0,
       vx: 0,
@@ -51,26 +66,37 @@ export class FireballFx {
     const ball = this.balls.find((candidate) => !candidate.alive);
     if (ball === undefined) return;
     const distance = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-    ball.alive = true;
-    ball.x = from.x;
-    ball.y = from.y;
+    Object.assign(ball, { alive: true, tracked: false, projectileId: FREE, x: from.x, y: from.y, targetX: to.x, targetY: to.y, trailCount: 0, trailHead: 0 });
     ball.vx = ((to.x - from.x) / distance) * this.config.speed;
     ball.vy = ((to.y - from.y) / distance) * this.config.speed;
-    ball.targetX = to.x;
-    ball.targetY = to.y;
-    ball.trailCount = 0;
-    ball.trailHead = 0;
   }
 
-  /** Fait avancer les boules de `dtMs` (temps d'effet). */
+  /**
+   * Pose la boule du projectile `id` en (`x`, `y`). À la première pose, le projectile prend une
+   * boule libre et la garde jusqu'à `release(id)`. Pool plein (plus de `maxFireballs` boules à
+   * l'écran) : le nouveau projectile n'est pas dessiné, les boules déjà posées restent intactes.
+   */
+  place(id: number, x: number, y: number): void {
+    const ball = this.ballOf(id) ?? this.claim(id);
+    if (ball === undefined) return;
+    ball.x = x;
+    ball.y = y;
+  }
+
+  /** Éteint la boule du projectile `id` et libère sa place ; sans effet si `id` n'a pas de boule. */
+  release(id: number): void {
+    const ball = this.ballOf(id);
+    if (ball === undefined) return;
+    ball.alive = false;
+    ball.projectileId = FREE;
+  }
+
+  /** Fait avancer les boules de `dtMs` (temps d'effet) : traînée échantillonnée, puis vol des boules de `launch`. */
   update(dtMs: number): void {
+    for (let due = this.clock.advance(dtMs); due > 0; due -= 1) this.sampleTrails();
     const dtS = dtMs / 1000;
     for (const ball of this.balls) {
-      if (!ball.alive) continue;
-      ball.trailX[ball.trailHead] = ball.x;
-      ball.trailY[ball.trailHead] = ball.y;
-      ball.trailHead = (ball.trailHead + 1) % this.config.trailPoints;
-      ball.trailCount = Math.min(ball.trailCount + 1, this.config.trailPoints);
+      if (!ball.alive || ball.tracked) continue;
       const remaining = Math.hypot(ball.targetX - ball.x, ball.targetY - ball.y);
       const stepLength = Math.hypot(ball.vx, ball.vy) * dtS;
       if (stepLength >= remaining) {
@@ -106,6 +132,34 @@ export class FireballFx {
       g.fillCircle(ball.x, ball.y, radius * this.config.midRadiusShare);
       g.fillStyle(this.config.coreColor, 1);
       g.fillCircle(ball.x, ball.y, radius * this.config.coreRadiusShare);
+    }
+  }
+
+  /** Boule posée pour le projectile `id`, s'il en a une. */
+  private ballOf(id: number): Ball | undefined {
+    for (const ball of this.balls) if (ball.tracked && ball.alive && ball.projectileId === id) return ball;
+    return undefined;
+  }
+
+  /** Donne une boule libre au projectile `id` ; `undefined` si toutes volent. */
+  private claim(id: number): Ball | undefined {
+    for (const ball of this.balls) {
+      if (ball.alive) continue;
+      Object.assign(ball, { alive: true, tracked: true, projectileId: id, trailCount: 0, trailHead: 0 });
+      return ball;
+    }
+    return undefined;
+  }
+
+  /** Un échantillon : la position de chaque boule vivante entre dans sa traînée. */
+  private sampleTrails(): void {
+    const { trailPoints } = this.config;
+    for (const ball of this.balls) {
+      if (!ball.alive) continue;
+      ball.trailX[ball.trailHead] = ball.x;
+      ball.trailY[ball.trailHead] = ball.y;
+      ball.trailHead = (ball.trailHead + 1) % trailPoints;
+      ball.trailCount = Math.min(ball.trailCount + 1, trailPoints);
     }
   }
 }

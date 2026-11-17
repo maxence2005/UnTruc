@@ -58,6 +58,10 @@ export const DUEL_CONFIG: DuelConfig = {
     maxComboHits: 3,
     staminaCost: { attack: 6, dodge: 12, parry: 8, counter: 8, combo: 10 },
   },
+  skills: {
+    referenceMagicPower: 10,
+    useChance: { base: 0.6, perIntelligence: 0.02, max: 0.9 },
+  },
   facing: {
     turnMargin: 20,
     turnDelayMs: 150,

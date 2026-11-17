@@ -2,6 +2,7 @@ import type { ContactPartName } from './duel-world';
 import type { FighterState } from './fighter-state';
 import type { Pose } from './pose';
 import type { FighterStats } from './stats';
+import type { SkillSpec } from './skill-spec';
 import type { WeaponSpec } from './weapon-spec';
 
 /**
@@ -192,6 +193,8 @@ export interface FighterSpec {
   attack: AttackSpec;
   /** Arme tenue, retrouvée dans le registre des armes ; absent = poings. */
   weapon?: WeaponSpec;
+  /** Compétences du combattant, retrouvées dans le registre ; absent ou vide = coups simples seulement (story 004). */
+  skills?: readonly SkillSpec[];
   /** Étourdissement de base d'un coup d'impact de référence sur un poids de référence, avant bornes (voir `StatsConfig`). */
   stunMs: number;
   stateTuning: Readonly<Record<FighterState, StateTuning>>;

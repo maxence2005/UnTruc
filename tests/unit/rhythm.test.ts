@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { punchContact } from './duel/fake-duel-world';
 import { DUEL_CONFIG } from '../../src/content/duel-config';
-import { FIGHTERS } from '../../src/content/fighters';
+import { FIGHTERS } from './duel/plain-fighters';
 import { Duel } from '../../src/core/duel';
 import { msToTicks, type DuelConfig, type ReactionsConfig, type StatsConfig } from '../../src/core/duel-config';
 import { createRng } from '../../src/core/rng';
