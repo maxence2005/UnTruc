@@ -42,6 +42,7 @@
 
 - Maxence, 2026-11-10 : « de la prise d'expérience et après des choix entre différentes compétences, armes, capacités ou stats qu'on pourra après remettre sur le personnage. Bien sûr, il aura un nombre limité. »
 - À confirmer avec Maxence : « nombre limité » est lu ici comme le nombre de propositions par niveau. Autre lecture possible : un nombre limité d'armes et de compétences portées par le combattant.
+- Maxence, 2026-11-17 : chaque compétence coûte des points (champ `points`, story 004) ; une compétence forte coûte plus cher à ajouter au personnage. Un budget de points par combattant est une lecture possible du « nombre limité » : à trancher ici ou dans la story 006.
 - C'est la récompense entre les duels du tournoi (story 007) : le tournoi appelle ce système, il ne le contient pas.
 - Pas de sauvegarde serveur ; comptes et base de données sont later.
 
