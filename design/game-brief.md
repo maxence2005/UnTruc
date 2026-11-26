@@ -53,7 +53,7 @@ Le premier adversaire sérieux arrive au deuxième ou troisième duel ; perdre m
 - [x] Armes physiques en données : prise à une ou deux mains, attaque propre à chaque arme
 - [x] Compétences lisibles : ciblage visible, raison affichée quand un coup est bloqué ou raté
 - [ ] Écran de gestion du personnage : armes et compétences lisibles en petites icônes, cosmétiques ; forme choisie parmi plusieurs prototypes
-- [ ] Compétence Transformation : le combattant devient loup-garou (griffes, queue physique)
+- [x] Compétence Transformation : le combattant devient loup-garou (griffes, queue physique)
 - [ ] Tournoi solo : enchaînement d'adversaires, récompenses entre les duels
 - [x] Effets d'impact (étincelles, ralentis, onde de choc, boule de feu) et look des combattants de la piste 5 (yeux expressifs, tête)
 - [ ] Système de niveaux : expérience gagnée en duel, puis choix limité entre compétences, armes, capacités ou stats

@@ -2,7 +2,10 @@ import type { DuelConfig } from './duel-config';
 import type { BodyPartName, ContactPartName } from './duel-world';
 import type { PosePatch } from './pose';
 import { hitDamage, type FighterStats } from './stats';
+import { assertTrigger, type SkillTrigger } from './skill-trigger-spec';
 import { assertStatusApplications, type StatusApplication } from './status-spec';
+
+export type { SkillTrigger, TriggerStage } from './skill-trigger-spec';
 
 /** Catégories de compétences, dans l'ordre d'affichage. Pour en ajouter une : l'ajouter ici, puis ses libellés dans `content/presentation.ts`. */
 export const SKILL_CATEGORIES = ['attack', 'magic', 'transformation'] as const;
@@ -110,6 +113,12 @@ export interface SkillSpec {
   reactions: SkillReactions;
   hit: SkillHit;
   timeline: readonly SkillPhase[];
+  /**
+   * Compétence à déclenchement (story 005) : elle ne se tire jamais ; chaque stade part tout seul
+   * quand les PV passent sous son seuil (`SkillSystem`). `conditions`, `reactions`, `hit`, `cooldownMs`,
+   * `weight` et `timeline` sont alors ignorés (valeurs neutres) : le jeu lit `trigger.stages`.
+   */
+  trigger?: SkillTrigger;
 }
 
 /** Dégâts d'une compétence : physique = comme un coup ; magique = dégât de base × puissance magique / référence. */
@@ -172,6 +181,12 @@ function assertNumbers(spec: SkillSpec): void {
 export function assertSkillSpec(spec: SkillSpec): void {
   const { id, timeline, hit } = spec;
   if (id.trim() === '') throw new Error('Compétence sans identifiant');
+  if (spec.trigger !== undefined) {
+    if (!SKILL_CATEGORIES.includes(spec.category)) fail(id, `catégorie inconnue (${String(spec.category)})`);
+    if (!Number.isInteger(spec.points) || spec.points < 1) fail(id, `points doit être un entier d'au moins 1 (reçu ${spec.points})`);
+    assertTrigger(id, spec.trigger);
+    return;
+  }
   if (timeline.length === 0) fail(id, 'timeline vide');
   if (!SKILL_CATEGORIES.includes(spec.category)) fail(id, `catégorie inconnue (${String(spec.category)})`);
   assertNumbers(spec);

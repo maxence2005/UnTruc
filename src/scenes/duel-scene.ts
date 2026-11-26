@@ -11,7 +11,9 @@ import { drawArena } from '../render/arena-view';
 import { FighterView } from '../render/fighter-view';
 import { ImpactFx } from '../render/fx/impact-fx';
 import { SkillFx } from '../render/skill-fx';
+import { readReducedMotion } from '../render/stage-look';
 import { StatusFx } from '../render/status-fx';
+import { TransformationFx } from '../render/transformation-fx';
 import { DuelHud } from '../ui/duel-hud';
 
 /**
@@ -30,6 +32,8 @@ export interface DuelSceneSetup {
   presentation: PresentationConfig;
   /** Lance une boule de feu de démonstration au début (`?fx=fireball`) ; la touche F en lance une à tout moment. */
   demoFireball?: boolean;
+  /** Coupe le tremblement d'écran ; par défaut, la préférence système `prefers-reduced-motion` (réglage complet : story 015). */
+  reducedMotion?: boolean;
 }
 
 /**
@@ -44,6 +48,7 @@ export class DuelScene extends Phaser.Scene {
   private fx!: ImpactFx;
   private skillFx!: SkillFx;
   private statusFx!: StatusFx;
+  private transformFx!: TransformationFx;
   private readonly onFireballKey = (): void => this.fx.launchDemoFireball();
   private accumulatorMs = 0;
   /** Sonde de debug des armes, appelée après chaque pas quand un combattant est armé. */
@@ -71,6 +76,9 @@ export class DuelScene extends Phaser.Scene {
     );
     this.fx = new ImpactFx(this, this.duel.events, this.world, this.views, (fighter) => this.duel.fighters[fighter].spec.stats.hp, config.arena, presentation.fx);
     this.skillFx = new SkillFx(this, this.duel.events, this.world, this.fx, config.arena, () => this.duel.skills.projectiles, presentation);
+    const inks = this.duel.fighters.map((fighter) => ({ outlineWidth: fighter.spec.look.outlineWidth, ink: fighter.spec.colors.outline }));
+    const reducedMotion = this.setup.reducedMotion ?? readReducedMotion(window);
+    this.transformFx = new TransformationFx(this, this.duel.events, this.world, this.fx, config.arena, presentation, inks, (fighter) => this.duel.fighters[fighter].facing, reducedMotion);
     this.hud = new DuelHud(this, this.duel, config.arena, presentation.hud);
     this.statusFx = new StatusFx(this, this.duel.events, this.world, this.fx, config.arena, presentation.statuses, presentation.fx.seed, this.hud);
     if (this.setup.demoFireball === true) this.fx.scheduleDemoFireball();
@@ -79,6 +87,7 @@ export class DuelScene extends Phaser.Scene {
       this.fx.destroy();
       this.skillFx.destroy();
       this.statusFx.destroy();
+      this.transformFx.destroy();
       this.input.keyboard?.off('keydown-F', this.onFireballKey);
     });
     installDuelDebugHook(seed, this.duel, this.world);
@@ -100,6 +109,7 @@ export class DuelScene extends Phaser.Scene {
     this.fx.update(realMs);
     this.skillFx.update(realMs);
     this.statusFx.update(realMs);
+    this.transformFx.update(realMs);
     for (const view of this.views) view.update();
     this.hud.update();
   }

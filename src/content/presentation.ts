@@ -1,4 +1,5 @@
 import type { PresentationConfig } from '../core/presentation-config';
+import { WEREWOLF_COSMETICS } from './cosmetics/werewolf';
 
 /** Apparence de l'arène et textes de l'interface (0xRRGGBB pour les couleurs). */
 export const PRESENTATION: PresentationConfig = {
@@ -103,6 +104,8 @@ export const PRESENTATION: PresentationConfig = {
     // sampleMs = une image à 60 i/s : 16 points x 1000/60 ms, soit la longueur d'avant (un point par image à 60 i/s).
     trail: { points: 16, sampleMs: 1000 / 60, width: 26, alpha: 0.55 },
     categories: { attack: 'Attaque', magic: 'Magie', transformation: 'Transformation' },
+    // Accessibilité : 3 flashs par seconde au plus (`design/accessibility-requirements.md`).
+    stageFlashLimit: { maxFlashes: 3, windowMs: 1000 },
     byId: {
       jump: {
         name: 'Saut',
@@ -124,6 +127,37 @@ export const PRESENTATION: PresentationConfig = {
           rush: { anchor: 'feet', sparks: 8, trail: 'start' },
         },
         onHit: { anchor: 'torso', shockwave: 140, sparks: 12, flash: true },
+      },
+      // Compétence à déclenchement : chaque stade a son nom, ses effets et ses cosmétiques (`stages`). Les `cues` gardent
+      // des étincelles au début de chaque phase ; l'éclair, l'onde et le ralenti sont dans les stades (flashs limités).
+      transformation: {
+        name: 'Transformation',
+        color: 0x6fb04a,
+        marker: false,
+        cues: {
+          growl: { anchor: 'torso', sparks: 8 },
+          transform: { anchor: 'torso', shockwave: 120, sparks: 12 },
+        },
+        stages: {
+          growl: {
+            name: 'Grognement',
+            color: 0xe8d9a0,
+            // Onde crème (couleur « nommé », art bible) : 3 anneaux à 180 ms d'écart ; tremblement de 1,2 % de l'écran à pleine force.
+            arena: { rings: 3, ringDelayMs: 180, lineWidth: 14, color: 0xe8d9a0, alpha: 0.75, shakeIntensity: 0.012, mouthArcs: 3, mouthRadius: 34, mouthSpreadDeg: 70, mouthMs: 1200 },
+            burst: { count: 10, colors: [0xe8d9a0, 0xf3f5ef], spreadDeg: 120 },
+          },
+          transformation: {
+            name: 'Transformation',
+            color: 0x6fb04a,
+            // Éclair vert transformation au passage en loup-garou (art bible, section 4).
+            flash: { color: 0x6fb04a, radius: 46, growth: 1.2, alpha: 0.6, durationMs: 380 },
+            burst: { count: 28, colors: [0x6fb04a, 0xa8dc84, 0xf3f5ef], spreadDeg: 360 },
+            slowmo: true,
+            cosmetics: WEREWOLF_COSMETICS,
+            // Trois traits rouge frappe cernés d'encre, tracés en 70 ms, effacés en 900 ms.
+            scratches: { maxShown: 6, lines: 3, length: 34, spacing: 8, angleDeg: 60, width: 3, outlineWidth: 1.5, color: 0xd9573b, outlineColor: 0x22302a, drawMs: 70, lifeMs: 900 },
+          },
+        },
       },
       fireball: {
         name: 'Boule de feu',

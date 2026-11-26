@@ -12,6 +12,8 @@ export interface Reactor {
   /** Faux si l'arme tenue n'a pas de garde (voir `WeaponSpec.guard`) : pas de parade. */
   readonly canParry: boolean;
   readonly spec: { readonly stats: { readonly agility: number } };
+  /** Stats en cours (bonus de forme compris) ; absent = celles de `spec`. */
+  readonly effectiveStats?: { readonly agility: number };
 }
 
 /** Chance d'une réaction pour une agilité donnée : `base + perAgility × agilité`, bornée entre 0 et `max`. */
@@ -26,7 +28,7 @@ export function canReact(state: FighterState): boolean {
 
 /** Vrai si le combattant a l'endurance pour payer `cost` et réussit son tirage. Sans l'endurance, aucun tirage n'a lieu. */
 export function passes(fighter: Reactor, chance: ChanceConfig, cost: number, rng: Rng): boolean {
-  return fighter.stamina >= cost && rng.next() < reactionChance(chance, fighter.spec.stats.agility);
+  return fighter.stamina >= cost && rng.next() < reactionChance(chance, (fighter.effectiveStats ?? fighter.spec.stats).agility);
 }
 
 /** Réactions permises contre une attaque (une compétence peut en interdire : la boule de feu ne se pare pas). */

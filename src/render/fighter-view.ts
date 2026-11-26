@@ -16,7 +16,7 @@ interface LimbLook {
 }
 
 /** Écart de profondeur entre deux combattants : chacun a moins de `DEPTH_STRIDE` couches. */
-const DEPTH_STRIDE = 10;
+export const DEPTH_STRIDE = 10;
 const HEAD_LAYER = 2;
 /**
  * Les armes passent devant les deux combattants : une arme qui frappe est dessinée

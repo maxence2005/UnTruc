@@ -20,7 +20,7 @@ Out of scope: see the brief (comptes, serveur, ligue en ligne, son, IA générat
 | 002 | Armes physiques en données | Integration | Complete | N/A (minimal) |
 | 003 | Effets d'impact | Visual/Feel | Complete | N/A (minimal) |
 | 004 | Compétences lisibles | Visual/Feel | Complete | N/A (minimal) |
-| 005 | Compétence Transformation loup-garou | Visual/Feel | Ready | N/A (minimal) |
+| 005 | Compétence Transformation loup-garou | Visual/Feel | Complete | N/A (minimal) |
 | 006 | Écran de gestion du personnage | UI | Ready | N/A (minimal) |
 | 007 | Tournoi solo | Logic | Ready | N/A (minimal) |
 | 008 | Stats du combattant | Logic | Complete | N/A (minimal) |

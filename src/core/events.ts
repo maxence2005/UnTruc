@@ -16,7 +16,14 @@ export interface DuelEvents {
     parried: boolean;
     skill?: string;
     point?: { x: number; y: number };
+    /** Stade de déclenchement dont la forme a porté ce coup (ex. « transformation » : griffes). Les traces se montrent si `!parried` et `hpLeft > 0`. */
+    form?: string;
   };
+  /**
+   * Un stade d'une compétence à déclenchement part (story 005) : `stage` est son identifiant ; `x`, `y` : le torse du
+   * combattant ; `arena` : effet sur toute l'arène (onde et tremblement d'écran), absent si le stade n'en a pas.
+   */
+  skillTrigger: { tick: number; fighter: number; skill: string; stage: string; x: number; y: number; arena?: { intensity: number; durationMs: number } };
   /** Un coup ne fait pas (tous) ses dégâts, et pourquoi : `blocked` (paré), `dodged` (esquivé), `missed` (la fenêtre de coup s'est fermée sans contact). `x`, `y` : où l'afficher. */
   noDamage: { tick: number; attacker: number; victim: number; reason: NoDamageReason; skill: string | null; x: number; y: number };
   /** Une compétence part ; `target` : le point du sol visé, fixé à cet instant. */
@@ -59,6 +66,7 @@ export class EventBus {
     noDamage: [],
     skillStart: [],
     skillCue: [],
+    skillTrigger: [],
     skillEnd: [],
     projectileEnd: [],
     dodge: [],

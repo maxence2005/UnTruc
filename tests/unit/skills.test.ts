@@ -15,7 +15,7 @@ import { ALWAYS_SKILL, CHARGE, countingRng, FAR, FIREBALL, JUMP, READY, SKILL_MA
 
 describe('Skill data', () => {
   it('loads the three skills and validates every entry', () => {
-    expect(SKILLS.all().map((skill) => skill.id)).toEqual(['jump', 'fireball', 'charge']);
+    expect(SKILLS.all().map((skill) => skill.id)).toEqual(['jump', 'fireball', 'charge', 'transformation']);
     for (const skill of SKILLS.all()) expect(() => assertSkillSpec(skill)).not.toThrow();
   });
 

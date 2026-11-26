@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import type { ArenaConfig } from '../core/duel-config';
-import type { DuelWorld } from '../core/duel-world';
+import type { DuelWorld, PartTransform } from '../core/duel-world';
 import type { EventBus } from '../core/events';
 import type { CueEffect, PresentationConfig } from '../core/presentation-config';
 import { createRng } from '../core/rng';
@@ -13,6 +13,7 @@ import { TrailFx } from './fx/trail';
 import { FX_DEPTH } from './fighter-view';
 import { SkillLabels } from './skill-labels';
 import { SkillMarker } from './skill-marker';
+import { stageBanner } from './stage-look';
 
 const UP = -Math.PI / 2;
 
@@ -36,9 +37,12 @@ export class SkillFx {
   private readonly fighters: number;
   private readonly flying = new Set<number>();
   private readonly seen = new Set<number>();
-  /** Lecteurs créés une fois : `update` les passe à chaque image sans allouer de fermeture. */
-  private readonly torsoOf = (fighter: number) => this.world.readPart(fighter, 'torso');
-  private readonly headOf = (fighter: number) => this.world.readPart(fighter, 'head');
+  /** Positions lues à chaque image, réutilisées : les appelants en copient `x` et `y` aussitôt. */
+  private readonly torso: PartTransform = { x: 0, y: 0, angle: 0 };
+  private readonly head: PartTransform = { x: 0, y: 0, angle: 0 };
+  /** Lecteurs créés une fois : `update` les passe à chaque image sans allouer de fermeture ni d'objet. */
+  private readonly torsoOf = (fighter: number) => this.world.readPart(fighter, 'torso', this.torso);
+  private readonly headOf = (fighter: number) => this.world.readPart(fighter, 'head', this.head);
   private destroyed = false;
 
   constructor(
@@ -99,6 +103,12 @@ export class SkillFx {
       const effect = skills.byId[skill]?.cues[cue];
       if (this.destroyed || effect === undefined) return;
       this.apply(effect, fighter, this.anchor(effect, fighter), skill);
+    });
+    // Après `skillStart` (même tick) : le nom du stade remplace celui de la compétence.
+    bus.on('skillTrigger', ({ fighter, skill, stage }) => {
+      if (this.destroyed) return;
+      const banner = stageBanner(skills, skill, stage);
+      this.labels.showName(fighter, banner.name, banner.color);
     });
     bus.on('skillEnd', ({ fighter }) => {
       if (this.destroyed) return;

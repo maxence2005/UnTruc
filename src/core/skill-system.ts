@@ -9,6 +9,8 @@ import { rollReaction, type Reaction } from './reactions';
 import type { Rng } from './rng';
 import { chooseSkill, tickCooldowns } from './skill-choice';
 import { SkillRun } from './skill-run';
+import { TriggerSystem } from './skill-trigger';
+import { endStuns } from './stun';
 import { skillDamage, type SkillProjectile, type SkillSpec } from './skill-spec';
 
 export type { Projectile } from './projectile';
@@ -40,10 +42,12 @@ export class SkillSystem {
   /** Projectiles en vol. */
   readonly projectiles: Projectile[] = [];
   private nextProjectileId = 0;
+  private readonly triggers: TriggerSystem;
 
   constructor(private readonly host: SkillHost) {
-    // Au KO, `tick()` ne tourne plus : les compétences en cours (des deux combattants) sont closes ici,
-    // avant que `endIfKo` ne rende la main au vainqueur.
+    this.triggers = new TriggerSystem(host);
+    // Après un KO, `tick()` ne tourne plus (un stade joué par `tick()` peut lui-même causer ce KO) : les
+    // compétences en cours des deux combattants sont closes ici, avant que `endIfKo` ne rende la main au vainqueur.
     host.events.on('ko', () => {
       this.projectiles.length = 0;
       for (const fighter of host.fighters) this.endRun(fighter, true);
@@ -55,12 +59,18 @@ export class SkillSystem {
     return this.host.fighters.some((fighter) => fighter.skills.length > 0);
   }
 
-  /** Un tick : fait baisser les recharges et clôt les compétences interrompues (combattant sonné). */
-  tick(): void {
+  /**
+   * Un tick : fait baisser les recharges, clôt les compétences interrompues (combattant sonné), rend la main
+   * aux étourdis dont le temps est écoulé, puis joue les stades de déclenchement dus. Un étourdi libéré à ce
+   * tick déclenche donc avant d'agir. Un stade peut finir le duel (KO) : le duel revérifie sa phase ensuite.
+   */
+  tick(world: DuelWorld): void {
     for (const fighter of this.host.fighters) {
       tickCooldowns(fighter.skills, fighter.cooldowns);
       if (fighter.skillRun !== null && fighter.state !== 'skill') this.endRun(fighter, true);
     }
+    endStuns(this.host.fighters);
+    this.triggers.tick(world);
   }
 
   /** Tente de lancer une compétence ; faux (sans tirage) si le combattant n'en a aucune de possible. */
@@ -140,6 +150,7 @@ export class SkillSystem {
       for (const skill of fighter.skills) values.push(fighter.cooldowns[skill.id] ?? 0);
     }
     for (const projectile of this.projectiles) values.push(projectile.x, projectile.y, projectile.vx, projectile.vy);
+    values.push(...this.triggers.snapshot());
     return values;
   }
 

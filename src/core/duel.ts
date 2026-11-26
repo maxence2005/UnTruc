@@ -11,7 +11,7 @@ import type { Rng } from './rng';
 import { SkillSystem } from './skill-system';
 import { StatusSystem } from './status-system';
 import { actionDelayScale, knockbackSpeed } from './stats';
-import { endStuns, shakeVictim } from './stun';
+import { shakeVictim } from './stun';
 
 /** Phase globale du duel : en cours, KO prononcé (la physique finit de tomber), figé. */
 export type DuelPhase = 'running' | 'ending' | 'over';
@@ -86,9 +86,8 @@ export class Duel {
       if (this.phase === 'running') this.tickStatuses(world);
     }
     for (const fighter of this.fighters) fighter.machine.tick();
+    if (this.phase === 'running') this.skills.tick(world); // recharges, fin des étourdissements, stades déclenchés (peut finir le duel)
     if (this.phase === 'running') {
-      this.skills.tick();
-      endStuns(this.fighters);
       for (const fighter of this.fighters) updateFacing(fighter, world.fighterX(fighter.index), world.fighterX(1 - fighter.index), this.config.facing, this.config.stepHz);
       for (const fighter of this.fighters) fighter.recoverStamina();
       this.settleInitiative(world);
@@ -108,7 +107,7 @@ export class Duel {
     const ready = (fighter: Fighter) => (fighter.state === 'idle' || fighter.state === 'approach') && fighter.actionTicksLeft <= 1;
     if (!ready(first) || !ready(second)) return;
     if (this.distance(world) > Math.min(first.attack.reach, second.attack.reach)) return;
-    const winner = this.fighters[initiativeWinner([first.spec.stats.speed, second.spec.stats.speed], this.rng)];
+    const winner = this.fighters[initiativeWinner([first.effectiveStats.speed, second.effectiveStats.speed], this.rng)];
     this.opponentOf(winner).actionTicksLeft = winner.windupTicks + winner.strikeTicks + 1;
   }
 
@@ -253,7 +252,7 @@ export class Duel {
   /** Délai avant la prochaine action, en ticks : base + part aléatoire seedée, raccourci par la vitesse. */
   private drawActionDelay(fighter: Fighter): number {
     const { action, stepHz } = this.config;
-    return msToTicks((action.delayBaseMs + this.rng.range(0, action.delayRandomMs)) * actionDelayScale(this.config, fighter.spec.stats), stepHz);
+    return msToTicks((action.delayBaseMs + this.rng.range(0, action.delayRandomMs)) * actionDelayScale(this.config, fighter.effectiveStats), stepHz);
   }
 
   /** Fin de la frappe : enchaîne un autre coup si celui-ci a touché sans être paré et que le tirage passe, sinon récupère. */

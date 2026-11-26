@@ -9,7 +9,8 @@ import type { Reaction } from './reactions';
 import type { SkillRun } from './skill-run';
 import type { SkillSpec } from './skill-spec';
 import { staminaRegenPerTick, walkSpeedScale, type FighterStats } from './stats';
-import type { ActiveStatus } from './status-spec';
+import type { StatBonus } from './skill-trigger-spec';
+import type { ActiveStatus, StatusApplication } from './status-spec';
 
 export type { Facing } from './facing';
 
@@ -63,6 +64,14 @@ export class Fighter {
   readonly statuses: ActiveStatus[] = [];
   /** Stats en cours : celles de la spec, poids retouché par les statuts (`setWeight`). Recul, étourdissement et masse les lisent. */
   effectiveStats: FighterStats;
+  /** Stades de déclenchement déjà joués (« compétence/stade », story 005) : un stade ne se rejoue pas dans un duel. */
+  readonly firedStages: string[] = [];
+  /** Statuts que chaque coup du combattant applique (griffes), donnés par un stade de déclenchement. */
+  readonly formApplies: StatusApplication[] = [];
+  /** Stade qui a donné la forme (`PendingHit.form`) ; `null` sans forme. */
+  formStage: string | null = null;
+  private bonus: StatBonus = { speed: 0, agility: 0 };
+  private weight: number;
   private readonly walkCycleTicks: number;
   private walkSpeed: number;
   private readonly dodgeRetreatSpeed: number;
@@ -89,6 +98,7 @@ export class Fighter {
     this.walkCycleTicks = msToTicks(spec.walk.cycleMs, stepHz);
     this.reactionTick = Math.max(1, this.windupTicks - msToTicks(config.reactions.leadMs, stepHz));
     this.effectiveStats = spec.stats;
+    this.weight = spec.stats.weight;
     this.walkSpeed = spec.walk.speed * walkSpeedScale(config, spec.stats);
     this.dodgeRetreatSpeed = config.reactions.dodgeRetreatSpeed;
     this.staminaRegen = staminaRegenPerTick(config, spec.stats);
@@ -99,7 +109,24 @@ export class Fighter {
    * La masse du corps est à réappliquer par l'appelant (`DuelWorld.setMassScale`).
    */
   setWeight(config: DuelConfig, weight: number): void {
-    this.effectiveStats = { ...this.spec.stats, weight };
+    this.weight = weight;
+    this.refreshStats(config);
+  }
+
+  /**
+   * Prend une forme (story 005) : bonus de vitesse et d'agilité (additifs, cumulés) et statuts appliqués par
+   * chaque coup, jusqu'à la fin du duel. `effectiveStats` les porte : délai d'action, initiative, tirages de réaction.
+   */
+  grantForm(config: DuelConfig, stage: string, bonus: StatBonus, applies: readonly StatusApplication[]): void {
+    this.bonus = { speed: this.bonus.speed + bonus.speed, agility: this.bonus.agility + bonus.agility };
+    this.formApplies.push(...applies);
+    this.formStage = stage;
+    this.refreshStats(config);
+  }
+
+  private refreshStats(config: DuelConfig): void {
+    const { stats } = this.spec;
+    this.effectiveStats = { ...stats, weight: this.weight, speed: stats.speed + this.bonus.speed, agility: stats.agility + this.bonus.agility };
     this.walkSpeed = this.spec.walk.speed * walkSpeedScale(config, this.effectiveStats);
   }
 

@@ -1,5 +1,6 @@
 import type { NoDamageReason } from './hit';
 import type { SkillCategory } from './skill-spec';
+import type { StageFlashLimit, StageLook } from './stage-presentation';
 import type { StatusesPresentation } from './status-presentation';
 
 /** Apparence du HUD du duel : tailles en pixels, couleurs, polices et textes. */
@@ -189,6 +190,8 @@ export interface SkillLook {
   onHit?: CueEffect;
   /** Effets quand son projectile s'arrête sans toucher. */
   onMiss?: CueEffect;
+  /** Compétence à déclenchement : nom, effets et cosmétiques de chaque stade (`skillTrigger.stage`). */
+  stages?: Readonly<Record<string, StageLook>>;
 }
 
 /** Bandeau du nom de compétence, au-dessus du lanceur. */
@@ -258,4 +261,6 @@ export interface SkillsPresentation {
   /** Libellé de chaque catégorie de compétence (`SkillSpec.category`). */
   categories: Readonly<Record<SkillCategory, string>>;
   byId: Readonly<Record<string, SkillLook>>;
+  /** Flashs des stades (`StageLook.flash`) : 3 par seconde au plus. */
+  stageFlashLimit: StageFlashLimit;
 }

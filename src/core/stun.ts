@@ -23,7 +23,22 @@ export function stunVictim(config: DuelConfig, victim: Fighter, impactSpeed: num
   victim.stunSeriesTicks = victim.state === 'stunned' ? victim.stunSeriesTicks + elapsed : 0;
   const ticksLeft = msToTicks(stats.maxStunSeriesMs, stepHz) - victim.stunSeriesTicks;
   const wanted = Math.max(remaining, stunTicksFor(config, victim.spec.stunMs, impactSpeed, victim.effectiveStats));
-  victim.stunTicks = Math.min(wanted, ticksLeft);
+  victim.stunTicks = Math.max(remaining, Math.min(wanted, ticksLeft));
+  victim.machine.transition('stunned');
+}
+
+/**
+ * Étourdissement d'une compétence (story 005) : `ms` de plus que ce qui reste, sans `maxStunMs` ni
+ * `maxStunSeriesMs`. Une garde ou une esquive en cours est cassée d'abord. Les coups suivants ne
+ * raccourcissent pas cet étourdissement (voir `stunVictim`).
+ */
+export function forceStun(config: DuelConfig, victim: Fighter, ms: number): void {
+  if (victim.state === 'parry' || victim.state === 'dodge') victim.machine.transition('idle');
+  const stunned = victim.state === 'stunned';
+  const elapsed = stunned ? victim.machine.ticksInState : 0;
+  const remaining = stunned ? victim.stunTicks - elapsed : 0;
+  victim.stunSeriesTicks = stunned ? victim.stunSeriesTicks + elapsed : 0;
+  victim.stunTicks = Math.max(remaining, msToTicks(ms, config.stepHz));
   victim.machine.transition('stunned');
 }
 

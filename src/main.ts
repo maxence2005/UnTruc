@@ -5,7 +5,9 @@ import { WEAPONS } from './content/weapons';
 import { PRESENTATION } from './content/presentation';
 import { STATUSES } from './content/statuses';
 import type { FighterSpec } from './core/fighter-spec';
+import { SKILLS } from './content/skills';
 import { readDemoStatus, withDemoStatus } from './debug/status-demo';
+import { wantsTransformationDemo, withTransformation } from './debug/transformation-demo';
 import { DuelScene } from './scenes/duel-scene';
 
 /** Seed demandé dans l'URL (`?seed=123`), sinon celui de la config. */
@@ -22,7 +24,8 @@ function readSeed(): number {
  */
 function readFighters(): readonly [FighterSpec, FighterSpec] {
   const params = new URLSearchParams(window.location.search);
-  const fighters = withStatusDemo(params, params.get('competences') === 'aucune' ? withoutSkills(FIGHTERS) : FIGHTERS);
+  const base = wantsTransformationDemo(params.get('competences')) ? withTransformation(FIGHTERS, SKILLS) : FIGHTERS;
+  const fighters = withStatusDemo(params, params.get('competences') === 'aucune' ? withoutSkills(FIGHTERS) : base);
   const raw = params.get('armes');
   if (raw === null) return fighters;
   const ids = raw.split(',').map((id) => id.trim());

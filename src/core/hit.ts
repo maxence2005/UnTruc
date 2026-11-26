@@ -31,6 +31,8 @@ export interface PendingHit {
    * Point d'entrée unique : rempli depuis `SkillSpec.hit.applies` ; la story 005 le remplira pour les griffes.
    */
   applies?: readonly StatusApplication[];
+  /** Stade de déclenchement dont la forme porte ce coup (griffes, story 005) ; copié dans l'événement `hit`. */
+  form?: string;
 }
 
 /** Émet `hit` : les dégâts réellement infligés (après une parade) et les PV restants de la victime. */
@@ -46,6 +48,7 @@ export function emitHit(events: EventBus, tick: number, hit: PendingHit, victim:
     parried,
     ...(skill === undefined ? {} : { skill }),
     ...(point === undefined ? {} : { point }),
+    ...(hit.form === undefined ? {} : { form: hit.form }),
   });
 }
 
@@ -88,9 +91,16 @@ export function contactHit(config: DuelConfig, attacker: Fighter, part: ContactP
   if (run !== null) {
     const { skill } = run;
     const damage = skillDamage(config, skill.hit, stats, impactSpeed);
-    return { attacker, part, impactSpeed, damage, skill: skill.id, parryable: skill.reactions.parryable, ...(skill.hit.applies === undefined ? {} : { applies: skill.hit.applies }) };
+    return { attacker, part, impactSpeed, damage, skill: skill.id, parryable: skill.reactions.parryable, ...appliesOf(attacker, skill.hit.applies) };
   }
-  return { attacker, part, impactSpeed, damage: hitDamage(config, attacker.attack.damage, impactSpeed, stats) };
+  return { attacker, part, impactSpeed, damage: hitDamage(config, attacker.attack.damage, impactSpeed, stats), ...appliesOf(attacker, undefined) };
+}
+
+/** Statuts d'un coup de corps : ceux de la compétence, plus ceux de la forme du combattant (griffes, story 005). Rien si aucun. */
+function appliesOf(attacker: Fighter, own: readonly StatusApplication[] | undefined): Pick<PendingHit, 'applies' | 'form'> {
+  const { formApplies, formStage } = attacker;
+  if (formApplies.length === 0) return own === undefined ? {} : { applies: own };
+  return { applies: [...(own ?? []), ...formApplies], ...(formStage === null ? {} : { form: formStage }) };
 }
 
 /** Un coup simple qui n'a rien touché : esquivé si l'adversaire est en pleine esquive, sinon raté. */

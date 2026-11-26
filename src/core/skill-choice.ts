@@ -18,6 +18,7 @@ export interface SkillContext {
 export function canLaunch(skill: SkillSpec, context: SkillContext): boolean {
   const { conditions, cost } = skill;
   return (
+    skill.trigger === undefined &&
     (context.cooldowns[skill.id] ?? 0) <= 0 &&
     context.stamina >= cost.stamina &&
     context.mana >= cost.mana &&

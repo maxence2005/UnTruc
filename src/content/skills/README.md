@@ -48,6 +48,36 @@ effets) est dans `../presentation.ts`, champ `skills.byId`.
    `assertSkillSpec`, et par `tests/unit/skills.test.ts`), puis à un combattant :
    `skills: [SKILLS.get('id')]` dans `../fighters.ts`.
 
+## Compétence à déclenchement (story 005)
+
+La Transformation (`transformation.ts`) ne se tire pas : elle part toute seule sur des seuils de PV.
+Le moteur (`core/skill-trigger.ts`) ne connaît aucune compétence ; tout est dans le champ `trigger`
+(`core/skill-trigger-spec.ts`, validé au chargement). Pour en ajouter une :
+
+1. Copier `transformation.ts`. Les champs `cost`, `cooldownMs`, `weight`, `conditions`, `reactions`,
+   `hit` et `timeline` sont ignorés (valeurs neutres, `timeline: []`) : seuls `id`, `category` et `points`
+   comptent, avec `trigger`. Une compétence à déclenchement n'est jamais tirée comme une autre.
+2. `trigger.stages` : des stades du seuil de PV le plus haut au plus bas. Chacun a `id` (unique dans la
+   compétence), `hpShare` (entre 0 et 1 exclus : part de PV max ; le stade part quand PV <= part × PV max),
+   `timeline` (phases sans coup ni mouvement : le combattant est immobile pendant leur durée ; `cue` émis
+   comme pour une compétence).
+3. Effets d'un stade, tous facultatifs : `strike` (`damage`, `stunMs` : l'adversaire les subit sans
+   esquive ni parade possibles, et l'étourdissement passe outre `stats.maxStunMs` et `maxStunSeriesMs`),
+   `arena` (`intensity` de 0 à 1, `durationMs` : onde et tremblement d'écran, lus par le rendu dans l'événement
+   `skillTrigger`), `statBonus` (`speed`, `agility` : additifs jusqu'à la fin du duel), `hitApplies` (statuts
+   que chaque coup de corps du combattant applique ensuite, ex. le saignement des griffes ; le coup porte
+   alors `form` = id du stade dans l'événement `hit`).
+4. Règles : chaque stade se joue une fois par duel ; si un coup franchit plusieurs seuils, seul le plus bas
+   se joue ; un combattant KO ne déclenche rien ; le stade attend que le combattant soit à l'arrêt ou en
+   approche (sonné, en attaque, en compétence, en récupération ou en réaction : il attend) ; un seul combattant
+   déclenche par tick (Rouge d'abord). La forme reste jusqu'à la fin du duel, même soigné.
+5. Ce qu'on voit, par stade : `skills.byId.<id>.stages.<stade>` dans `../presentation.ts` (types :
+   `core/stage-presentation.ts`) : `name` et `color` du bandeau (sinon le nom de la compétence), `flash`,
+   `burst`, `slowmo`, `arena` (onde qui traverse l'arène, tremblement d'écran coupé en mouvement réduit),
+   `cosmetics` (posés jusqu'à la fin du duel, voir `../cosmetics/README.md`), `scratches` (griffures sur
+   les coups de la forme). Les flashs des stades passent par une limite commune (`skills.stageFlashLimit`).
+6. Démo : `?competences=loup` donne la Transformation à Rouge (`src/debug/transformation-demo.ts`).
+
 ## Erreurs à éviter
 
 - **Ne pas donner d'élan par un muscle.** Un muscle pose des vitesses avec une force illimitée ;

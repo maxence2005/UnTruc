@@ -95,6 +95,20 @@ describe('Duel', () => {
     expect(second.tick - first.tick).toBeGreaterThanOrEqual(Math.round((windupMs + strikeMs) / TICK_MS));
   });
 
+  it('draws the initiative from the effective speed, form bonus included', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const duel = new Duel(READY_TOGETHER, FIGHTERS, createRng(seed));
+      duel.fighters[1].grantForm(READY_TOGETHER, 'test', { speed: 100000, agility: 0 }, []);
+      const world = new FakeDuelWorld(IN_REACH);
+      const starts: DuelEvents['attackStart'][] = [];
+      duel.events.on('attackStart', (start) => starts.push(start));
+
+      while (starts.length < 1 && duel.tick < MAX_TICKS) duel.update(world);
+
+      expect(starts[0].fighter).toBe(1);
+    }
+  });
+
   it('draws the initiative in proportion to the speed of each fighter', () => {
     const rng = createRng(SEED);
     const wins = [0, 0];
