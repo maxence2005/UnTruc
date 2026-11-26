@@ -18,3 +18,7 @@ Le jeu : `jeu.untruc.fr`, un auto-battler dans l'esprit de La Brute, en 2D, sur 
 - `docs/architecture/principes-code.md` : principes de code pour un projet maintenu par des IA (contenu en données, couches, patterns, déterminisme, interdits). Brouillon à transformer en ADR avec `/architecture-decision`.
 - `.claude/docs/technical-preferences.md` : rendu, physique et interdits remplis.
 - `design/ideas/le-truc.md` : idée mise de côté (chaque combattant a son « Truc », objet physique ; variante générée par IA). Ne pas lancer sans demande.
+
+## Gemini sur le projet (2026-11-26)
+
+Maxence utilise aussi Gemini (Antigravity, sur sa machine perso) pour les images et le rendu graphique (Nano Banana). Ses règles : `GEMINI.md` à la racine, `.agents/rules/`, procédures dans `.agents/skills/` (`/generer-image`, `/verifier-rendu`, `/verifier-code`). Les deux machines se synchronisent par git (`maxence2005/UnTruc`) : faire un `git pull` avant de travailler, et ne pas reprendre des fichiers que Gemini est en train de modifier. Les images vont dans `assets/` avec leur entrée dans `assets/provenance.yaml`. `npm run check:hashes` rejoue les duels de référence.

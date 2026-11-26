@@ -12,7 +12,8 @@
     "proto:combat:build": "tsc --noEmit -p prototypes/combat-animation-concept && vite build prototypes/combat-animation-concept",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "check:weapons": "node tools/weapon-check.mjs"
+    "check:weapons": "node tools/weapon-check.mjs",
+    "check:hashes": "npm run build && node tools/hash-check.mjs"
   },
   "dependencies": {
     "phaser": "4.2.1"

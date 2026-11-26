@@ -1,0 +1,10 @@
+# Provenance des assets d'UnTruc : une entrée par fichier ajouté dans assets/ (hors references/ si non retenu).
+# Exemple :
+# - file: ui/icon-saut.png
+#   tool: Gemini (Nano Banana), modèle gemini-…-image
+#   date: 2026-11-26
+#   prompt: "…"
+#   variant: 2 sur 3 (choisie par Maxence)
+#   edits: recadrage 128x128, fond transparent
+#   license: généré pour le projet, usage libre dans UnTruc
+assets: []
