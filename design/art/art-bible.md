@@ -176,7 +176,7 @@ area type, and environmental storytelling guidelines.
   - Une sans-sérif condensée pour tout le texte (prototype : Avenir Next Condensed).
   - Un « feutre » pour les titres et les grands moments seulement (« VICTOIRE ») (prototype : Marker Felt).
   - Hiérarchie (à 1280×720 logique) : titres 28-30 · noms d'items 18-20 gras · étiquettes 14-16. **Minimum 14 px**.
-  - Les polices du prototype sont des polices système macOS, absentes ailleurs : le jeu embarque des polices sous licence libre (OFL), une condensée et une manuscrite façon feutre, dans `assets/` (choix des fichiers à faire).
+  - Les polices du prototype sont des polices système macOS, absentes ailleurs : le jeu embarque des polices sous licence libre (OFL ou Apache 2.0), une condensée et une manuscrite façon feutre, installées par npm (`@fontsource`) : Barlow Condensed (OFL) et Permanent Marker (Apache 2.0) (Maxence, 2026-11-26). Le texte de leurs licences accompagne le jeu (crédits).
 - **Icônes** : voir Section 3 (rond = arme, carré arrondi = compétence, pictogrammes sportifs).
 - **Animation** : l'interface ne bouge qu'en réponse à une action.
   - Équiper : « clac » court (pastille 1,0 → 1,08 → 1,0 en 120 ms).

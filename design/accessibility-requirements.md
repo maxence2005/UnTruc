@@ -151,6 +151,5 @@ Pas de son pour l'instant (brief : « later »). Quand le son arrivera :
 
 ## Open Questions
 
-- Avertissement photosensible : à quel écran (avant le premier duel, ou au lancement du jeu) ? Faut-il le montrer à chaque visite ?
-- Où vivent les réglages (réduction des flashs, vitesse du duel) tant qu'il n'y a pas d'écran d'options ? Proposition : un petit menu sur l'écran de gestion (story 006).
+- Réglages et avertissement (Maxence, 2026-11-17) : l'avertissement photosensible et les options (réduction des flashs, mouvement réduit) vivent sur l'écran d'accueil ; la vitesse du duel se change directement pendant le combat, sans gêner le HUD, et elle est gardée d'un combat à l'autre. Story 015.
 - La spec du HUD fixait WCAG AA « comme base » : c'est maintenant ce document qui le fixe.

@@ -216,7 +216,7 @@ Le duel n'a ni exploration, ni dialogue, ni pause : le spectateur n'a aucune com
 - **Écran étroit, le reste** (revue UX, 2026-11-17) : énergie et mana restent deux barres fines sous la vie, sur toute la largeur du coin ; icônes de compétences et pastilles de statut passent à 16 px, sur une seule ligne sous les barres (statuts à l'extérieur, compétences à l'intérieur) ; l'annonce reste au centre, réduite pour tenir dans la largeur.
 - **Marges** : le HUD garde une marge de sécurité aux bords (hypothèse : 16 px réels sur ordinateur, 8 px sur écran étroit), et sur mobile il respecte les zones sûres (encoche, coins arrondis).
 - **Piste pour l'implémentation** : sur un téléphone en portrait, l'arène ne remplit pas la hauteur ; si le canevas peut occuper l'écran entier, le HUD peut vivre dans la bande libre au-dessus de l'arène, hors budget. À vérifier avec le mode d'échelle de Phaser.
-- **Pas de cible tactile** : le HUD du duel n'est pas interactif.
+- **Pas de cible tactile** : le HUD du duel n'est pas interactif. Seule exception, hors HUD : le contrôle de vitesse du duel (story 015), petit, hors des zones Z1 à Z4 (proposition : coin bas, sous la ligne du sol), au clavier et au toucher.
 
 ---
 

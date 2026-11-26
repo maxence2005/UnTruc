@@ -43,6 +43,7 @@
 - Les valeurs de la story 008 (100 PV, puissance 10, poids 70, intelligence 0…) sont des valeurs de base provisoires ; les vraies valeurs de départ viennent de cette story.
 - À décider avec Maxence : le nombre de personnages, leurs noms, leurs stats, et si le look change d'un personnage à l'autre.
 - Intelligence : 0 de base ; chaque point débloque un comportement (story 004).
+- Maxence, 2026-11-26 (story 006) : les cosmétiques (coiffure, barbe, couleurs) se choisissent **une seule fois au début, dans cette étape**, pas dans l'écran de gestion (qui ne règle que l'arme et les compétences). Cette story doit donc aussi proposer ce choix de look au joueur, avant son premier duel. Les critères ci-dessus ne le disent pas encore : à ajouter au début de cette story.
 
 ---
 
